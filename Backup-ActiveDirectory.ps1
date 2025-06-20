@@ -88,49 +88,49 @@ try {
     Write-Log "Sauvegarde des controleurs de domaine..."
     Get-ADDomainController -Filter * | Export-Csv -Path (Join-Path $backupFolder "DomainControllers.csv") -NoTypeInformation -Encoding UTF8
 
-    # Sauvegarde des objets de stratégie de groupe (références)
-    Write-Log "Sauvegarde des références GPO..."
+    # Sauvegarde des objets de strategie de groupe (references)
+    Write-Log "Sauvegarde des references GPO..."
     Get-ADObject -Filter 'ObjectClass -eq "groupPolicyContainer"' -Properties * | Export-Csv -Path (Join-Path $backupFolder "GPOObjects.csv") -NoTypeInformation -Encoding UTF8
 
     # Sauvegarde des trusts de domaine
     Write-Log "Sauvegarde des trusts..."
     Get-ADTrust -Filter * | Export-Csv -Path (Join-Path $backupFolder "Trusts.csv") -NoTypeInformation -Encoding UTF8
 
-    # Sauvegarde des schémas d'attributs personnalisés
-    Write-Log "Sauvegarde des attributs de schéma..."
+    # Sauvegarde des schemas d'attributs personnalises
+    Write-Log "Sauvegarde des attributs de schema..."
     Get-ADObject -SearchBase (Get-ADRootDSE).SchemaNamingContext -Filter 'ObjectClass -eq "attributeSchema"' -Properties * | Export-Csv -Path (Join-Path $backupFolder "SchemaAttributes.csv") -NoTypeInformation -Encoding UTF8
 
-    # Sauvegarde des classes de schéma
-    Write-Log "Sauvegarde des classes de schéma..."
+    # Sauvegarde des classes de schema
+    Write-Log "Sauvegarde des classes de schema..."
     Get-ADObject -SearchBase (Get-ADRootDSE).SchemaNamingContext -Filter 'ObjectClass -eq "classSchema"' -Properties * | Export-Csv -Path (Join-Path $backupFolder "SchemaClasses.csv") -NoTypeInformation -Encoding UTF8
 
-    # Sauvegarde des liens de réplication
-    Write-Log "Sauvegarde des liens de réplication..."
+    # Sauvegarde des liens de replication
+    Write-Log "Sauvegarde des liens de replication..."
     Get-ADReplicationConnection -Filter * | Export-Csv -Path (Join-Path $backupFolder "ReplicationConnections.csv") -NoTypeInformation -Encoding UTF8
 
     # Sauvegarde des partitions de l'annuaire
     Write-Log "Sauvegarde des partitions..."
     Get-ADObject -SearchBase (Get-ADRootDSE).ConfigurationNamingContext -Filter 'ObjectClass -eq "crossRef"' -Properties * | Export-Csv -Path (Join-Path $backupFolder "DirectoryPartitions.csv") -NoTypeInformation -Encoding UTF8
 
-    # Sauvegarde des objets de quotas (si activés)
+    # Sauvegarde des objets de quotas (si actives)
     Write-Log "Sauvegarde des quotas..."
     try {
         Get-ADObject -Filter 'ObjectClass -eq "msDS-QuotaContainer"' -Properties * | Export-Csv -Path (Join-Path $backupFolder "Quotas.csv") -NoTypeInformation -Encoding UTF8
     }
     catch {
-        Write-Log "Pas de quotas configurés" "INFO"
+        Write-Log "Pas de quotas configures" "INFO"
     }
 
     # Sauvegarde des liens d'attribution de certificats
-    Write-Log "Sauvegarde des modèles de certificats..."
+    Write-Log "Sauvegarde des modeles de certificats..."
     try {
         Get-ADObject -SearchBase "CN=Certificate Templates,CN=Public Key Services,CN=Services,$((Get-ADRootDSE).ConfigurationNamingContext)" -Filter * -Properties * | Export-Csv -Path (Join-Path $backupFolder "CertificateTemplates.csv") -NoTypeInformation -Encoding UTF8
     }
     catch {
-        Write-Log "Pas de modèles de certificats trouvés" "INFO"
+        Write-Log "Pas de modeles de certificats trouves" "INFO"
     }
 
-    # Sauvegarde des GPO (nécessite le module GroupPolicy)
+    # Sauvegarde des GPO (necessite le module GroupPolicy)
     if (Get-Module -ListAvailable -Name GroupPolicy) {
         Write-Log "Sauvegarde des GPO..."
         Import-Module GroupPolicy
@@ -141,7 +141,7 @@ try {
         Get-GPO -All | ForEach-Object {
             try {
                 $gpoBackupInfo = Backup-GPO -Guid $_.Id -Path $gpoBackupPath
-                Write-Log "GPO sauvegardé: $($_.DisplayName) -> $($gpoBackupInfo.BackupDirectory)"
+                Write-Log "GPO sauvegarde: $($_.DisplayName) -> $($gpoBackupInfo.BackupDirectory)"
             }
             catch {
                 Write-Log "Erreur sauvegarde GPO $($_.DisplayName): $($_.Exception.Message)" "ERROR"
@@ -169,16 +169,46 @@ try {
     # Sauvegarde complete de la base de donnees AD (si demandee)
     if ($FullBackup) {
         Write-Log "Sauvegarde complete de la base de donnees AD..."
-        $systemStateBackup = Join-Path $backupFolder "SystemState"
+        
+        # Creation d'un dossier sur le disque C: pour wbadmin
+        $systemStateBackup = "C:\SystemStateBackup_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
         New-Item -Path $systemStateBackup -ItemType Directory -Force | Out-Null
         
-        # Utilisation de wbadmin pour la sauvegarde systeme
-        $wbResult = Start-Process -FilePath "wbadmin" -ArgumentList "start systemstatebackup -backuptarget:$systemStateBackup -quiet" -Wait -PassThru -NoNewWindow
-        if ($wbResult.ExitCode -eq 0) {
-            Write-Log "Sauvegarde systeme reussie"
+        try {
+            # Utilisation de wbadmin avec un chemin local
+            Write-Log "Demarrage de la sauvegarde systeme vers $systemStateBackup..."
+            $wbResult = Start-Process -FilePath "wbadmin" -ArgumentList "start systemstatebackup -backuptarget:$systemStateBackup -quiet" -Wait -PassThru -NoNewWindow
+            
+            if ($wbResult.ExitCode -eq 0) {
+                Write-Log "Sauvegarde systeme reussie"
+                # Deplacer la sauvegarde vers le dossier de sauvegarde principal
+                $finalSystemStateBackup = Join-Path $backupFolder "SystemState"
+                Move-Item $systemStateBackup $finalSystemStateBackup -Force
+                Write-Log "Sauvegarde systeme deplacee vers $finalSystemStateBackup"
+            }
+            else {
+                Write-Log "Erreur lors de la sauvegarde systeme (code: $($wbResult.ExitCode))" "ERROR"
+                Write-Log "Alternative: Creation d'une sauvegarde NTDS manuelle..." "INFO"
+                
+                # Alternative: sauvegarde du fichier NTDS.dit et des registres
+                $ntdsBackup = Join-Path $backupFolder "NTDS_Manual"
+                New-Item -Path $ntdsBackup -ItemType Directory -Force | Out-Null
+                
+                # Export des cles de registre importantes
+                reg export "HKLM\SYSTEM\CurrentControlSet\Services\NTDS" (Join-Path $ntdsBackup "NTDS_Registry.reg") /y
+                reg export "HKLM\SYSTEM\CurrentControlSet\Services\Netlogon" (Join-Path $ntdsBackup "Netlogon_Registry.reg") /y
+                
+                Write-Log "Sauvegarde manuelle NTDS terminee"
+            }
         }
-        else {
-            Write-Log "Erreur lors de la sauvegarde systeme (code: $($wbResult.ExitCode))" "ERROR"
+        catch {
+            Write-Log "Erreur critique lors de la sauvegarde systeme: $($_.Exception.Message)" "ERROR"
+        }
+        finally {
+            # Nettoyage du dossier temporaire si il existe encore
+            if (Test-Path $systemStateBackup) {
+                Remove-Item $systemStateBackup -Recurse -Force -ErrorAction SilentlyContinue
+            }
         }
     }
 
