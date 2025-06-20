@@ -15,29 +15,33 @@ cls
 color %COLOR_TITRE%
 echo.
 echo  ===============================================================
-echo  ^|             SAUVEGARDE ACTIVE DIRECTORY                 ^|
+echo  ^|             SAUVEGARDE ACTIVE DIRECTORY                  ^|
 echo  ===============================================================
 echo.
 color %COLOR_MENU%
 echo  [1] Sauvegarde manuelle rapide
 echo  [2] Sauvegarde complete avec base de donnees
-echo  [3] Programmer sauvegarde automatique
-echo  [4] Restaurer objets AD depuis sauvegarde
-echo  [5] Voir les sauvegardes existantes
-echo  [6] Nettoyer anciennes sauvegardes
-echo  [7] Tester la connectivite AD
+echo  [3] Sauvegarde interactive (choisir elements)
+echo  [4] Restauration interactive
+echo  [5] Programmer sauvegarde automatique
+echo  [6] Restaurer objets AD depuis sauvegarde
+echo  [7] Voir les sauvegardes existantes
+echo  [8] Nettoyer anciennes sauvegardes
+echo  [9] Tester la connectivite AD
 echo  [0] Quitter
 echo.
 color %COLOR_OPTION%
-set /p "choix=Votre choix (0-7): "
+set /p "choix=Votre choix (0-9): "
 
 if "%choix%"=="1" goto SAUVEGARDE_RAPIDE
 if "%choix%"=="2" goto SAUVEGARDE_COMPLETE
-if "%choix%"=="3" goto PROGRAMMER_SAUVEGARDE
-if "%choix%"=="4" goto RESTAURER_OBJETS
-if "%choix%"=="5" goto VOIR_SAUVEGARDES
-if "%choix%"=="6" goto NETTOYER_SAUVEGARDES
-if "%choix%"=="7" goto TESTER_AD
+if "%choix%"=="3" goto SAUVEGARDE_INTERACTIVE
+if "%choix%"=="4" goto RESTAURATION_INTERACTIVE
+if "%choix%"=="5" goto PROGRAMMER_SAUVEGARDE
+if "%choix%"=="6" goto RESTAURER_OBJETS
+if "%choix%"=="7" goto VOIR_SAUVEGARDES
+if "%choix%"=="8" goto NETTOYER_SAUVEGARDES
+if "%choix%"=="9" goto TESTER_AD
 if "%choix%"=="0" goto QUITTER
 
 color %COLOR_ERREUR%
@@ -99,7 +103,7 @@ set /p "heure=Heure de la sauvegarde quotidienne (ex: 02:00): "
 if "%heure%"=="" set "heure=02:00"
 echo.
 echo Programmation de la sauvegarde quotidienne a %heure%...
-powershell.exe -ExecutionPolicy Bypass -File "%~dp0Schedule-ADBackup.ps1" -ScheduleTime "%heure%"
+powershell.exe -ExecutionPolicy Bypass -File "%~dp0Schedule-ActiveDirectory-Backup.ps1" -ScheduleTime "%heure%"
 if errorlevel 1 (
     color %COLOR_ERREUR%
     echo Erreur lors de la programmation!
@@ -131,7 +135,7 @@ if "%dossier%"=="" (
 )
 echo.
 echo Restauration depuis C:\ADBackup\%dossier%...
-powershell.exe -ExecutionPolicy Bypass -File "%~dp0Restore-ADObjects.ps1" -BackupFolder "C:\ADBackup\%dossier%"
+powershell.exe -ExecutionPolicy Bypass -File "%~dp0Restore-ActiveDirectory.ps1" -BackupFolder "C:\ADBackup\%dossier%"
 if errorlevel 1 (
     color %COLOR_ERREUR%
     echo Erreur lors de la restauration!
@@ -197,6 +201,27 @@ echo.
 echo Test de la connectivite Active Directory...
 echo.
 powershell.exe -Command "try { Import-Module ActiveDirectory; Get-ADDomain | Select-Object Name,DomainMode,PDCEmulator; Write-Host 'Connexion AD OK' -ForegroundColor Green } catch { Write-Host 'Erreur de connexion AD' -ForegroundColor Red }"
+echo.
+pause
+goto MENU_PRINCIPAL
+
+:RESTAURATION_INTERACTIVE
+cls
+color %COLOR_INFO%
+echo ===============================================================
+echo              RESTAURATION INTERACTIVE
+echo ===============================================================
+echo.
+echo Lancement du menu de restauration interactive...
+echo.
+powershell.exe -ExecutionPolicy Bypass -File "%~dp0Restore-Interactive.ps1"
+if errorlevel 1 (
+    color %COLOR_ERREUR%
+    echo Erreur lors de la restauration interactive!
+) else (
+    color %COLOR_SUCCES%
+    echo Restauration interactive terminee!
+)
 echo.
 pause
 goto MENU_PRINCIPAL
