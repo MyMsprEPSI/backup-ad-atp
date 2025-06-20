@@ -1,5 +1,4 @@
 @echo off
-chcp 65001 >nul
 setlocal enabledelayedexpansion
 
 :: Configuration des couleurs
@@ -14,9 +13,9 @@ set "COLOR_INFO=09"
 cls
 color %COLOR_TITRE%
 echo.
-echo  ═══════════════════════════════════════════════════════════
-echo  ║             SAUVEGARDE ACTIVE DIRECTORY                 ║
-echo  ═══════════════════════════════════════════════════════════
+echo  ===============================================================
+echo  ^|             SAUVEGARDE ACTIVE DIRECTORY                 ^|
+echo  ===============================================================
 echo.
 color %COLOR_MENU%
 echo  [1] Sauvegarde manuelle rapide
@@ -48,9 +47,9 @@ goto MENU_PRINCIPAL
 :SAUVEGARDE_RAPIDE
 cls
 color %COLOR_INFO%
-echo ═══════════════════════════════════════════════════════════
+echo ===============================================================
 echo                 SAUVEGARDE RAPIDE
-echo ═══════════════════════════════════════════════════════════
+echo ===============================================================
 echo.
 echo Lancement de la sauvegarde rapide des objets AD...
 echo.
@@ -69,9 +68,9 @@ goto MENU_PRINCIPAL
 :SAUVEGARDE_COMPLETE
 cls
 color %COLOR_INFO%
-echo ═══════════════════════════════════════════════════════════
+echo ===============================================================
 echo                SAUVEGARDE COMPLETE
-echo ═══════════════════════════════════════════════════════════
+echo ===============================================================
 echo.
 echo Lancement de la sauvegarde complete (objets + base de donnees)...
 echo Cette operation peut prendre plusieurs minutes...
@@ -91,9 +90,9 @@ goto MENU_PRINCIPAL
 :PROGRAMMER_SAUVEGARDE
 cls
 color %COLOR_INFO%
-echo ═══════════════════════════════════════════════════════════
+echo ===============================================================
 echo              PROGRAMMER SAUVEGARDE AUTOMATIQUE
-echo ═══════════════════════════════════════════════════════════
+echo ===============================================================
 echo.
 set /p "heure=Heure de la sauvegarde quotidienne (ex: 02:00): "
 if "%heure%"=="" set "heure=02:00"
@@ -114,9 +113,9 @@ goto MENU_PRINCIPAL
 :RESTAURER_OBJETS
 cls
 color %COLOR_INFO%
-echo ═══════════════════════════════════════════════════════════
+echo ===============================================================
 echo                  RESTAURER OBJETS AD
-echo ═══════════════════════════════════════════════════════════
+echo ===============================================================
 echo.
 echo Dossiers de sauvegarde disponibles:
 echo.
@@ -146,9 +145,9 @@ goto MENU_PRINCIPAL
 :VOIR_SAUVEGARDES
 cls
 color %COLOR_INFO%
-echo ═══════════════════════════════════════════════════════════
+echo ===============================================================
 echo               SAUVEGARDES EXISTANTES
-echo ═══════════════════════════════════════════════════════════
+echo ===============================================================
 echo.
 if exist "C:\ADBackup\" (
     for /f "tokens=*" %%a in ('dir /b /ad "C:\ADBackup\" 2^>nul') do (
@@ -168,9 +167,9 @@ goto MENU_PRINCIPAL
 :NETTOYER_SAUVEGARDES
 cls
 color %COLOR_INFO%
-echo ═══════════════════════════════════════════════════════════
+echo ===============================================================
 echo              NETTOYER ANCIENNES SAUVEGARDES
-echo ═══════════════════════════════════════════════════════════
+echo ===============================================================
 echo.
 set /p "jours=Supprimer les sauvegardes de plus de combien de jours? (defaut: 30): "
 if "%jours%"=="" set "jours=30"
@@ -190,9 +189,9 @@ goto MENU_PRINCIPAL
 :TESTER_AD
 cls
 color %COLOR_INFO%
-echo ═══════════════════════════════════════════════════════════
+echo ===============================================================
 echo               TEST CONNECTIVITE AD
-echo ═══════════════════════════════════════════════════════════
+echo ===============================================================
 echo.
 echo Test de la connectivite Active Directory...
 echo.
@@ -205,9 +204,9 @@ goto MENU_PRINCIPAL
 cls
 color %COLOR_SUCCES%
 echo.
-echo  ═══════════════════════════════════════════════════════════
-echo  ║                     AU REVOIR!                         ║
-echo  ═══════════════════════════════════════════════════════════
+echo  ===============================================================
+echo  ^|                     AU REVOIR!                         ^|
+echo  ===============================================================
 echo.
 timeout /t 2 >nul
 exit /b 0
