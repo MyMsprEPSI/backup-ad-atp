@@ -1,3 +1,6 @@
+# CE FICHIER EST OBSOLETE - MIGRE VERS Scripts\Restore-Interactive.ps1
+# SUPPRIMER CE FICHIER APRES MIGRATION
+
 <#
 .SYNOPSIS
     Script interactif de restauration selective Active Directory

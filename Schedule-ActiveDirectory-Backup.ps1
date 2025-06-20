@@ -1,3 +1,6 @@
+# CE FICHIER EST OBSOLETE - MIGRE VERS Scripts\Schedule-ADBackup.ps1
+# SUPPRIMER CE FICHIER APRES MIGRATION
+
 <#
 .SYNOPSIS
     Script de programmation des sauvegardes automatiques Active Directory

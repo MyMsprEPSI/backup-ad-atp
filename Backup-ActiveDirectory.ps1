@@ -1,3 +1,8 @@
+# CE FICHIER EST OBSOLETE - FONCTIONNALITE MIGREE VERS:
+# - Scripts\Backup-ActiveDirectory.ps1 (sauvegarde principale)
+# - Scripts\Backup-Interactive.ps1 (sauvegarde interactive)
+# SUPPRIMER CE FICHIER APRES MIGRATION
+
 <#
 .SYNOPSIS
     Script interactif de sauvegarde selective Active Directory

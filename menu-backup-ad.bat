@@ -58,7 +58,7 @@ echo ===============================================================
 echo.
 echo Lancement de la sauvegarde rapide des objets AD...
 echo.
-powershell.exe -ExecutionPolicy Bypass -File "%~dp0Backup-ActiveDirectory.ps1"
+powershell.exe -ExecutionPolicy Bypass -File "%~dp0Scripts\Backup-ActiveDirectory.ps1"
 if errorlevel 1 (
     color %COLOR_ERREUR%
     echo Erreur lors de la sauvegarde!
@@ -80,7 +80,7 @@ echo.
 echo Lancement de la sauvegarde complete (objets + base de donnees)...
 echo Cette operation peut prendre plusieurs minutes...
 echo.
-powershell.exe -ExecutionPolicy Bypass -File "%~dp0Backup-ActiveDirectory.ps1" -FullBackup
+powershell.exe -ExecutionPolicy Bypass -File "%~dp0Scripts\Backup-ActiveDirectory.ps1" -FullBackup
 if errorlevel 1 (
     color %COLOR_ERREUR%
     echo Erreur lors de la sauvegarde complete!
@@ -92,24 +92,22 @@ echo.
 pause
 goto MENU_PRINCIPAL
 
-:PROGRAMMER_SAUVEGARDE
+:SAUVEGARDE_INTERACTIVE
 cls
 color %COLOR_INFO%
 echo ===============================================================
-echo              PROGRAMMER SAUVEGARDE AUTOMATIQUE
+echo              SAUVEGARDE INTERACTIVE
 echo ===============================================================
 echo.
-set /p "heure=Heure de la sauvegarde quotidienne (ex: 02:00): "
-if "%heure%"=="" set "heure=02:00"
+echo Lancement du menu de selection interactif...
 echo.
-echo Programmation de la sauvegarde quotidienne a %heure%...
-powershell.exe -ExecutionPolicy Bypass -File "%~dp0Schedule-ActiveDirectory-Backup.ps1" -ScheduleTime "%heure%"
+powershell.exe -ExecutionPolicy Bypass -File "%~dp0Scripts\Backup-Interactive.ps1"
 if errorlevel 1 (
     color %COLOR_ERREUR%
-    echo Erreur lors de la programmation!
+    echo Erreur lors de la sauvegarde interactive!
 ) else (
     color %COLOR_SUCCES%
-    echo Tache planifiee creee avec succes!
+    echo Sauvegarde interactive terminee!
 )
 echo.
 pause
@@ -122,20 +120,9 @@ echo ===============================================================
 echo                  RESTAURER OBJETS AD
 echo ===============================================================
 echo.
-echo Dossiers de sauvegarde disponibles:
+echo Lancement de la restauration simple...
 echo.
-dir /b /ad "C:\ADBackup\*" 2>nul
-echo.
-set /p "dossier=Nom du dossier de sauvegarde: "
-if "%dossier%"=="" (
-    color %COLOR_ERREUR%
-    echo Aucun dossier specifie!
-    pause
-    goto MENU_PRINCIPAL
-)
-echo.
-echo Restauration depuis C:\ADBackup\%dossier%...
-powershell.exe -ExecutionPolicy Bypass -File "%~dp0Restore-ActiveDirectory.ps1" -BackupFolder "C:\ADBackup\%dossier%"
+powershell.exe -ExecutionPolicy Bypass -File "%~dp0Scripts\Restore-Interactive.ps1"
 if errorlevel 1 (
     color %COLOR_ERREUR%
     echo Erreur lors de la restauration!
@@ -214,7 +201,7 @@ echo ===============================================================
 echo.
 echo Lancement du menu de restauration interactive...
 echo.
-powershell.exe -ExecutionPolicy Bypass -File "%~dp0Restore-Interactive.ps1"
+powershell.exe -ExecutionPolicy Bypass -File "%~dp0Scripts\Restore-Interactive.ps1"
 if errorlevel 1 (
     color %COLOR_ERREUR%
     echo Erreur lors de la restauration interactive!
@@ -222,6 +209,18 @@ if errorlevel 1 (
     color %COLOR_SUCCES%
     echo Restauration interactive terminee!
 )
+echo.
+pause
+goto MENU_PRINCIPAL
+
+:PROGRAMMER_SAUVEGARDE
+cls
+color %COLOR_INFO%
+echo ===============================================================
+echo              PROGRAMMER SAUVEGARDE AUTOMATIQUE
+echo ===============================================================
+echo.
+powershell.exe -ExecutionPolicy Bypass -File "%~dp0Scripts\Schedule-ADBackup.ps1"
 echo.
 pause
 goto MENU_PRINCIPAL

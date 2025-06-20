@@ -1,0 +1,38 @@
+{
+  "presets": {
+    "essential": {
+      "name": "Sauvegarde Essentielle",
+      "description": "Users, Groups, OUs, Computers",
+      "items": ["1", "2", "3", "4"]
+    },
+    "complete": {
+      "name": "Sauvegarde Complete",
+      "description": "Tout sauf Schema et Replication",
+      "items": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "15"
+      ]
+    },
+    "security": {
+      "name": "Sauvegarde Securite",
+      "description": "Users, Groups, GPO, Trusts",
+      "items": ["1", "2", "12", "11"]
+    },
+    "infrastructure": {
+      "name": "Sauvegarde Infrastructure",
+      "description": "Sites, DC, Replication",
+      "items": ["6", "10", "14"]
+    }
+  }
+}
