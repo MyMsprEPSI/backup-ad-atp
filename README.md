@@ -1,87 +1,87 @@
-# Backup-AD-ATP
+# Backup AD & ATP
 
-Script PowerShell interactif pour la sauvegarde et restauration d'objets Active Directory et GPO.
+## Description
 
-## 📋 Description
+Ce projet permet d'automatiser la sauvegarde et la gestion des données Active Directory (AD) et Advanced Threat Protection (ATP). Il fournit des scripts et outils pour faciliter la maintenance, la sécurité et la restauration des environnements AD et ATP.
 
-Ce script offre une solution complète pour la gestion des sauvegardes Active Directory, incluant :
+## Fonctionnalités
 
-- **Sauvegarde/restauration** des objets AD (Utilisateurs, Groupes, Ordinateurs, OU)
-- **Sauvegarde/restauration** des Group Policy Objects (GPO)
-- **Tests de validation** des exports/imports
-- **Gestion automatique** de la rotation des sauvegardes
-- **Notifications par email** des résultats des opérations
-- **Interface interactive** avec menu utilisateur
+- Sauvegarde automatisée des objets AD (utilisateurs, groupes, ordinateurs, etc.)
+- Exportation et archivage des configurations ATP
+- Restauration rapide à partir des sauvegardes
+- Journalisation détaillée des opérations
+- Notifications en cas d'échec ou de succès des sauvegardes
+- Interface de configuration simple
 
-## 🚀 Fonctionnalités
+## Prérequis
 
-### Sauvegardes
-- ✅ Utilisateurs Active Directory
-- ✅ Groupes et leurs membres
-- ✅ Ordinateurs du domaine
-- ✅ Unités Organisationnelles (OU)
-- ✅ Group Policy Objects (GPO)
-- ✅ Sauvegarde complète automatisée
+- Windows Server avec droits d'administration
+- PowerShell 5.1 ou supérieur
+- Droits d'accès à Active Directory et ATP
+- Modules PowerShell : ActiveDirectory, AzureAD (si applicable)
 
-### Restaurations
-- ✅ Restauration sélective par type d'objet
-- ✅ Restauration complète avec ordre optimisé
-- ✅ Mode simulation (dry-run) pour validation
-- ✅ Gestion des conflits d'objets existants
+## Installation
 
-### Outils de maintenance
-- ✅ Test d'intégrité des sauvegardes
-- ✅ Rotation automatique des anciens fichiers
-- ✅ Logs détaillés et EventLog Windows
-- ✅ Notifications email automatiques
+1. Clonez le dépôt :
+   ```bash
+   git clone https://github.com/MyMsprEPSI/backup-ad-atp.git
+   ```
+2. Accédez au dossier du projet :
+   ```bash
+   cd backup-ad-atp
+   ```
+3. Installez les modules nécessaires :
+   ```powershell
+   Install-Module ActiveDirectory
+   Install-Module AzureAD
+   ```
 
-## 📋 Prérequis
+## Utilisation
 
-### Système
-- **PowerShell** 5.1 ou 7.x
-- **Windows Server** 2016/2019/2022
-- **Modules PowerShell** : ActiveDirectory, GroupPolicy
+1. Configurez les paramètres dans le fichier `config.json` ou via les variables d'environnement.
+2. Lancez le script principal :
+   ```powershell
+   .\backup-ad-atp.ps1
+   ```
+3. Consultez les logs dans le dossier `logs/` pour le suivi des opérations.
 
-### Permissions
-- **Domain Admin** pour les opérations de restauration
-- **Lecture AD** minimum pour les sauvegardes
-- **Droits administrateur local** recommandés
+## Structure du projet
 
-### Réseau
-- Connectivité vers contrôleur de domaine
-- Accès SMTP pour notifications (optionnel)
+- `backup-ad-atp.ps1` : Script principal de sauvegarde
+- `config.json` : Fichier de configuration
+- `modules/` : Modules complémentaires
+- `logs/` : Fichiers journaux
+- `README.md` : Documentation
 
-## 🔧 Installation
+## Bonnes pratiques
 
-1. **Cloner le repository**
-```powershell
-git clone https://github.com/MyMsprEPSI/backup-ad-atp.git
-cd backup-ad-atp
-```
+- Planifiez les sauvegardes en dehors des heures de production.
+- Testez régulièrement la restauration à partir des sauvegardes.
+- Sécurisez les accès aux fichiers de sauvegarde.
 
-Configurer les variables Éditez le fichier Backup-AD-ATP.ps1 et personnalisez la section $Global:Config :
-```powershell
-$Global:Config = @{
-    BackupRootPath = "C:\ADBackup"              # Chemin des sauvegardes
-    LogPath        = "C:\ADBackup\Logs"         # Chemin des logs
-    TempPath       = "C:\ADBackup\Temp"         # Dossier temporaire
-    RetentionDays  = 30                         # Rétention en jours
-    SMTPServer     = "smtp.votredomaine.com"    # Serveur SMTP
-    SMTPFrom       = "adbackup@votredomaine.com" # Expéditeur
-    SMTPTo         = @("admin@votredomaine.com") # Destinataires
-    # ... autres paramètres
-}
-```
+## Support
+
+Pour toute question ou problème, veuillez ouvrir une issue sur le dépôt GitHub ou contacter l'administrateur du projet.
+
+## Licence
+
+Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus d'informations.
+
+
 Vérifier les modules
 
 ```powershell
 Import-Module ActiveDirectory, GroupPolicy
 ```
+
+
 🎯 Utilisation
 Lancement interactif
+
 ```powershell
 .\Backup-AD-ATP.ps1
 ```
+
 Utilisation programmatique
 
 Sauvegarde des utilisateurs
@@ -99,12 +99,14 @@ Restore-ADUsers -FilePath "C:\ADBackup\Users_20231201_143022.csv" -DryRun
 ```
 
 Restauration complète
+
 ```powershell
 $BackupDir = "C:\ADBackup\20231201_143022_COMPLETE"
 Start-CompleteRestore -BackupPath $BackupDir
 ```
 
 Test d'intégrité
+
 ```powershell
 Test-BackupIntegrity -BackupPath "C:\ADBackup"
 ```
@@ -124,6 +126,7 @@ backup-ad-atp/
 ```
 
 Structure des sauvegardes
+
 ```plaintext
 C:\ADBackup/
 ├── 20231201_143022_COMPLETE/       # Sauvegarde complète
@@ -138,6 +141,7 @@ C:\ADBackup/
 
 🧪 Tests
 Exécuter les tests Pester
+
 ```powershell
 # Tests complets
 Invoke-Pester -Script "Tests/Backup-AD-ATP.Tests.ps1" -Output Detailed
@@ -148,12 +152,12 @@ Invoke-Pester -Script "Tests/Backup-AD-ATP.Tests.ps1" -Output Detailed
 
 Fonctions testées
 
-``Initialize-Environment`` - Initialisation de l'environnement
-``Test-ADAuthority`` - Vérification des permissions
-``Write-LogMessage`` - Système de logging
-``Backup-ADUsers`` - Sauvegarde utilisateurs
-``Backup-ADGroups`` - Sauvegarde groupes
-``Restore-ADUsers`` - Restauration utilisateurs
+`Initialize-Environment` - Initialisation de l'environnement
+`Test-ADAuthority` - Vérification des permissions
+`Write-LogMessage` - Système de logging
+`Backup-ADUsers` - Sauvegarde utilisateurs
+`Backup-ADGroups` - Sauvegarde groupes
+`Restore-ADUsers` - Restauration utilisateurs
 
 📊 Menu interactif
 
@@ -180,10 +184,11 @@ TESTS ET MAINTENANCE
 13. Test d'intégrité des sauvegardes
 14. Simulation de restauration
 15. Rotation des sauvegardes
-````
+```
 
 🔧 Configuration avancée
 Notifications email
+
 ```powershell
 $Global:Config.SMTPServer = "smtp.gmail.com"
 $Global:Config.SMTPPort = 587
@@ -193,6 +198,7 @@ $Global:Config.SMTPTo = @("admin1@mondomaine.com", "admin2@mondomaine.com")
 ```
 
 Rétention des sauvegardes
+
 ```powershell
 $Global:Config.RetentionDays = 90  # Conserver 90 jours
 ```
@@ -247,7 +253,6 @@ Standards de code
 
 📝 Licence
 Ce projet est sous licence Apache 2.0 - voir le fichier LICENSE pour plus de détails.
-
 
 🙏 Remerciements
 
