@@ -1,0 +1,1 @@
+Invoke-Pester -Script "Tests/Backup-AD-ATP.Tests.ps1" -Output Detailed

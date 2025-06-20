@@ -7,11 +7,11 @@
     - Sauvegarder/restaurer des objets AD (Utilisateurs, Groupes, Ordinateurs, OU)
     - Sauvegarder/restaurer des GPO
     - Effectuer des tests de validation des exports/imports
-    - Gérer la rotation automatique des sauvegardes
-    - Notifier par mail les résultats des opérations
+    - Gerer la rotation automatique des sauvegardes
+    - Notifier par mail les resultats des operations
 
 .AUTHOR
-    Générée par GitHub Copilot
+    Generee par GitHub Copilot
 
 .VERSION
     1.0.0
@@ -21,13 +21,13 @@
     - Windows Server 2016/2019/2022
     - Module ActiveDirectory
     - Module GroupPolicy
-    - Droits Domain Admin pour les opérations de restauration
+    - Droits Domain Admin pour les operations de restauration
     - Droits lecture AD pour les sauvegardes
 
 .LIMITATIONS
-    - Ne sauvegarde pas l'état système, DNS ou autres services
-    - Focalisé uniquement sur les objets AD et GPO
-    - Nécessite une connectivité réseau pour les notifications mail
+    - Ne sauvegarde pas l'etat systeme, DNS ou autres services
+    - Focalise uniquement sur les objets AD et GPO
+    - Necessite une connectivite reseau pour les notifications mail
 
 .NOTES
     Modifiez les variables de configuration ci-dessous selon votre environnement
@@ -37,7 +37,7 @@
 #Requires -Modules ActiveDirectory, GroupPolicy
 
 # ===================================================================================================
-# VARIABLES DE CONFIGURATION GLOBALES - À PERSONNALISER
+# VARIABLES DE CONFIGURATION GLOBALES - A PERSONNALISER
 # ===================================================================================================
 
 # Chemins de sauvegarde et restauration
@@ -54,7 +54,7 @@ $Global:Config = @{
     SMTPPort       = 587
     SMTPFrom       = "adbackup@votredomaine.com"
     SMTPTo         = @("admin@votredomaine.com")
-    SMTPSubject    = "[AD Backup] Rapport d'opération"
+    SMTPSubject    = "[AD Backup] Rapport d'operation"
     SMTPUseSSL     = $true
     
     # Configuration EventLog
@@ -67,8 +67,8 @@ $Global:Config = @{
     # Messages personnalisables
     Messages       = @{
         Welcome        = "=== Script de Sauvegarde/Restauration Active Directory & GPO ==="
-        Goodbye        = "Au revoir ! Script terminé."
-        ConfirmRestore = "ATTENTION : Cette opération va modifier Active Directory. Continuer ?"
+        Goodbye        = "Au revoir ! Script termine."
+        ConfirmRestore = "ATTENTION : Cette operation va modifier Active Directory. Continuer ?"
         TestMode       = "[MODE TEST]"
         DryRun         = "[DRY-RUN]"
     }
@@ -81,19 +81,19 @@ $Global:Config = @{
 function Initialize-Environment {
     <#
     .SYNOPSIS
-        Initialise l'environnement du script (dossiers, logs, vérifications)
+        Initialise l'environnement du script (dossiers, logs, verifications)
     #>
     
     try {
-        # Création des dossiers
+        # Creation des dossiers
         @($Config.BackupRootPath, $Config.LogPath, $Config.TempPath) | ForEach-Object {
             if (!(Test-Path $_)) {
                 New-Item -Path $_ -ItemType Directory -Force | Out-Null
-                Write-LogMessage "Dossier créé : $_" -Level Info
+                Write-LogMessage "Dossier cree : $_" -Level Info
             }
         }
         
-        # Vérification des modules
+        # Verification des modules
         $RequiredModules = @("ActiveDirectory", "GroupPolicy")
         foreach ($Module in $RequiredModules) {
             if (!(Get-Module -Name $Module -ListAvailable)) {
@@ -107,7 +107,7 @@ function Initialize-Environment {
             New-EventLog -LogName $Config.EventLogName -Source $Config.EventLogSource
         }
         
-        Write-LogMessage "Environnement initialisé avec succès" -Level Info
+        Write-LogMessage "Environnement initialise avec succes" -Level Info
         return $true
     }
     catch {
@@ -119,17 +119,17 @@ function Initialize-Environment {
 function Test-ADAuthority {
     <#
     .SYNOPSIS
-        Vérifie les droits utilisateur pour les opérations AD
+        Verifie les droits utilisateur pour les operations AD
     #>
     
     try {
         $CurrentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent()
         $Principal = New-Object System.Security.Principal.WindowsPrincipal($CurrentUser)
         
-        # Vérification droits admin local
+        # Verification droits admin local
         $IsAdmin = $Principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
         
-        # Test de connectivité AD
+        # Test de connectivite AD
         $ADTest = Get-ADDomain -ErrorAction Stop
         
         return @{
@@ -151,9 +151,9 @@ function Test-ADAuthority {
 function Write-LogMessage {
     <#
     .SYNOPSIS
-        Écrit un message dans les logs (fichier + EventLog)
+        Ecrit un message dans les logs (fichier + EventLog)
     .PARAMETER Message
-        Message à logger
+        Message a logger
     .PARAMETER Level
         Niveau de log (Info, Warning, Error)
     #>
@@ -170,7 +170,7 @@ function Write-LogMessage {
     
     # Log fichier
     $LogFile = Join-Path $Config.LogPath "ADBackup_$(Get-Date -Format 'yyyyMMdd').log"
-    Add-Content -Path $LogFile -Value $LogEntry
+    Add-Content -Path $LogFile -Value $LogEntry -Encoding UTF8
     
     # EventLog
     $EventType = switch ($Level) {
@@ -216,7 +216,7 @@ function Backup-ADUsers {
     )
     
     try {
-        Write-LogMessage "Début sauvegarde utilisateurs AD" -Level Info
+        Write-LogMessage "Debut sauvegarde utilisateurs AD" -Level Info
         
         $Users = Get-ADUser -Filter $Filter -Properties *
         $ExportPath = Join-Path $Path "Users_$(Get-Date -Format 'yyyyMMdd_HHmmss').csv"
@@ -226,7 +226,7 @@ function Backup-ADUsers {
         LastLogonDate, PasswordLastSet, AccountExpirationDate | 
         Export-Csv -Path $ExportPath -NoTypeInformation -Encoding UTF8
         
-        Write-LogMessage "Utilisateurs sauvegardés : $($Users.Count) vers $ExportPath" -Level Info
+        Write-LogMessage "Utilisateurs sauvegardes : $($Users.Count) vers $ExportPath" -Level Info
         
         return @{
             Success = $true
@@ -253,7 +253,7 @@ function Backup-ADGroups {
     )
     
     try {
-        Write-LogMessage "Début sauvegarde groupes AD" -Level Info
+        Write-LogMessage "Debut sauvegarde groupes AD" -Level Info
         
         $Groups = Get-ADGroup -Filter $Filter -Properties *
         $ExportPath = Join-Path $Path "Groups_$(Get-Date -Format 'yyyyMMdd_HHmmss').csv"
@@ -276,7 +276,7 @@ function Backup-ADGroups {
         
         $GroupsData | Export-Csv -Path $ExportPath -NoTypeInformation -Encoding UTF8
         
-        Write-LogMessage "Groupes sauvegardés : $($Groups.Count) vers $ExportPath" -Level Info
+        Write-LogMessage "Groupes sauvegardes : $($Groups.Count) vers $ExportPath" -Level Info
         
         return @{
             Success = $true
@@ -303,7 +303,7 @@ function Backup-ADComputers {
     )
     
     try {
-        Write-LogMessage "Début sauvegarde ordinateurs AD" -Level Info
+        Write-LogMessage "Debut sauvegarde ordinateurs AD" -Level Info
         
         $Computers = Get-ADComputer -Filter $Filter -Properties *
         $ExportPath = Join-Path $Path "Computers_$(Get-Date -Format 'yyyyMMdd_HHmmss').csv"
@@ -313,7 +313,7 @@ function Backup-ADComputers {
         LastLogonDate, PasswordLastSet, Location | 
         Export-Csv -Path $ExportPath -NoTypeInformation -Encoding UTF8
         
-        Write-LogMessage "Ordinateurs sauvegardés : $($Computers.Count) vers $ExportPath" -Level Info
+        Write-LogMessage "Ordinateurs sauvegardes : $($Computers.Count) vers $ExportPath" -Level Info
         
         return @{
             Success = $true
@@ -330,7 +330,7 @@ function Backup-ADComputers {
 function Backup-ADOrganizationalUnits {
     <#
     .SYNOPSIS
-        Sauvegarde les unités organisationnelles
+        Sauvegarde les unites organisationnelles
     #>
     param(
         [Parameter(Mandatory)]
@@ -338,7 +338,7 @@ function Backup-ADOrganizationalUnits {
     )
     
     try {
-        Write-LogMessage "Début sauvegarde OU AD" -Level Info
+        Write-LogMessage "Debut sauvegarde OU AD" -Level Info
         
         $OUs = Get-ADOrganizationalUnit -Filter * -Properties *
         $ExportPath = Join-Path $Path "OrganizationalUnits_$(Get-Date -Format 'yyyyMMdd_HHmmss').csv"
@@ -347,7 +347,7 @@ function Backup-ADOrganizationalUnits {
         City, Country, PostalCode, State, StreetAddress | 
         Export-Csv -Path $ExportPath -NoTypeInformation -Encoding UTF8
         
-        Write-LogMessage "OU sauvegardées : $($OUs.Count) vers $ExportPath" -Level Info
+        Write-LogMessage "OU sauvegardees : $($OUs.Count) vers $ExportPath" -Level Info
         
         return @{
             Success = $true
@@ -372,7 +372,7 @@ function Backup-GPOs {
     )
     
     try {
-        Write-LogMessage "Début sauvegarde GPO" -Level Info
+        Write-LogMessage "Debut sauvegarde GPO" -Level Info
         
         $GPOBackupPath = Join-Path $Path "GPO_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
         New-Item -Path $GPOBackupPath -ItemType Directory -Force | Out-Null
@@ -407,7 +407,7 @@ function Backup-GPOs {
         $BackupResults | Export-Csv -Path $ReportPath -NoTypeInformation -Encoding UTF8
         
         $SuccessCount = ($BackupResults | Where-Object Success).Count
-        Write-LogMessage "GPO sauvegardées : $SuccessCount/$($GPOs.Count) vers $GPOBackupPath" -Level Info
+        Write-LogMessage "GPO sauvegardees : $SuccessCount/$($GPOs.Count) vers $GPOBackupPath" -Level Info
         
         return @{
             Success = $true
@@ -434,7 +434,7 @@ function Restore-ADUsers {
     .PARAMETER FilePath
         Chemin du fichier CSV de sauvegarde
     .PARAMETER DryRun
-        Mode simulation sans modification réelle
+        Mode simulation sans modification reelle
     #>
     param(
         [Parameter(Mandatory)]
@@ -445,7 +445,7 @@ function Restore-ADUsers {
     
     try {
         $Mode = if ($DryRun) { $Config.Messages.DryRun } else { "" }
-        Write-LogMessage "$Mode Début restauration utilisateurs depuis $FilePath" -Level Info
+        Write-LogMessage "$Mode Debut restauration utilisateurs depuis $FilePath" -Level Info
         
         if (!(Test-Path $FilePath)) {
             throw "Fichier de sauvegarde introuvable : $FilePath"
@@ -460,18 +460,18 @@ function Restore-ADUsers {
                 
                 if (!$DryRun) {
                     if ($ExistingUser) {
-                        # Mise à jour utilisateur existant
+                        # Mise a jour utilisateur existant
                         Set-ADUser -Identity $User.SamAccountName -Description $User.Description -Department $User.Department -Title $User.Title
-                        $Action = "Mis à jour"
+                        $Action = "Mis a jour"
                     }
                     else {
-                        # Création nouvel utilisateur (nécessiterait plus de paramètres)
-                        Write-LogMessage "Création d'utilisateur non implémentée dans cette version : $($User.SamAccountName)" -Level Warning
-                        $Action = "Ignoré (création)"
+                        # Creation nouvel utilisateur (necessiterait plus de parametres)
+                        Write-LogMessage "Creation d'utilisateur non implementee dans cette version : $($User.SamAccountName)" -Level Warning
+                        $Action = "Ignore (creation)"
                     }
                 }
                 else {
-                    $Action = if ($ExistingUser) { "Serait mis à jour" } else { "Serait créé" }
+                    $Action = if ($ExistingUser) { "Serait mis a jour" } else { "Serait cree" }
                 }
                 
                 $Results += [PSCustomObject]@{
@@ -491,7 +491,7 @@ function Restore-ADUsers {
         }
         
         $SuccessCount = ($Results | Where-Object Success).Count
-        Write-LogMessage "$Mode Utilisateurs traités : $SuccessCount/$($Users.Count)" -Level Info
+        Write-LogMessage "$Mode Utilisateurs traites : $SuccessCount/$($Users.Count)" -Level Info
         
         return @{
             Success = $true
@@ -502,6 +502,267 @@ function Restore-ADUsers {
     }
     catch {
         Write-LogMessage "Erreur restauration utilisateurs : $($_.Exception.Message)" -Level Error
+        return @{ Success = $false; Error = $_.Exception.Message }
+    }
+}
+
+function Restore-ADGroups {
+    <#
+    .SYNOPSIS
+        Restaure les groupes Active Directory depuis un fichier CSV
+    .PARAMETER FilePath
+        Chemin du fichier CSV de sauvegarde
+    .PARAMETER DryRun
+        Mode simulation sans modification reelle
+    #>
+    param(
+        [Parameter(Mandatory)]
+        [string]$FilePath,
+        
+        [switch]$DryRun
+    )
+    
+    try {
+        $Mode = if ($DryRun) { $Config.Messages.DryRun } else { "" }
+        Write-LogMessage "$Mode Debut restauration groupes depuis $FilePath" -Level Info
+        
+        if (!(Test-Path $FilePath)) {
+            throw "Fichier de sauvegarde introuvable : $FilePath"
+        }
+        
+        $Groups = Import-Csv -Path $FilePath -Encoding UTF8
+        $Results = @()
+        
+        foreach ($Group in $Groups) {
+            try {
+                $ExistingGroup = Get-ADGroup -Filter "SamAccountName -eq '$($Group.SamAccountName)'" -ErrorAction SilentlyContinue
+                
+                if (!$DryRun) {
+                    if ($ExistingGroup) {
+                        # Mise a jour groupe existant
+                        Set-ADGroup -Identity $Group.SamAccountName -Description $Group.Description
+                        
+                        # Restauration des membres si disponible
+                        if ($Group.Members -and $Group.Members -ne "") {
+                            $Members = $Group.Members -split ";"
+                            foreach ($Member in $Members) {
+                                try {
+                                    Add-ADGroupMember -Identity $Group.SamAccountName -Members $Member -ErrorAction SilentlyContinue
+                                }
+                                catch {
+                                    Write-LogMessage "Impossible d'ajouter le membre $Member au groupe $($Group.SamAccountName)" -Level Warning
+                                }
+                            }
+                        }
+                        $Action = "Mis a jour"
+                    }
+                    else {
+                        # Creation nouveau groupe
+                        $NewGroupParams = @{
+                            Name           = $Group.Name
+                            SamAccountName = $Group.SamAccountName
+                            GroupCategory  = $Group.GroupCategory
+                            GroupScope     = $Group.GroupScope
+                            Description    = $Group.Description
+                        }
+                        New-ADGroup @NewGroupParams
+                        $Action = "Cree"
+                    }
+                }
+                else {
+                    $Action = if ($ExistingGroup) { "Serait mis a jour" } else { "Serait cree" }
+                }
+                
+                $Results += [PSCustomObject]@{
+                    SamAccountName = $Group.SamAccountName
+                    Action         = $Action
+                    Success        = $true
+                }
+            }
+            catch {
+                $Results += [PSCustomObject]@{
+                    SamAccountName = $Group.SamAccountName
+                    Action         = "Erreur"
+                    Success        = $false
+                    Error          = $_.Exception.Message
+                }
+            }
+        }
+        
+        $SuccessCount = ($Results | Where-Object Success).Count
+        Write-LogMessage "$Mode Groupes traites : $SuccessCount/$($Groups.Count)" -Level Info
+        
+        return @{
+            Success = $true
+            Count   = $SuccessCount
+            Total   = $Groups.Count
+            Results = $Results
+        }
+    }
+    catch {
+        Write-LogMessage "Erreur restauration groupes : $($_.Exception.Message)" -Level Error
+        return @{ Success = $false; Error = $_.Exception.Message }
+    }
+}
+
+function Restore-ADComputers {
+    <#
+    .SYNOPSIS
+        Restaure les ordinateurs Active Directory depuis un fichier CSV
+    .PARAMETER FilePath
+        Chemin du fichier CSV de sauvegarde
+    .PARAMETER DryRun
+        Mode simulation sans modification reelle
+    #>
+    param(
+        [Parameter(Mandatory)]
+        [string]$FilePath,
+        
+        [switch]$DryRun
+    )
+    
+    try {
+        $Mode = if ($DryRun) { $Config.Messages.DryRun } else { "" }
+        Write-LogMessage "$Mode Debut restauration ordinateurs depuis $FilePath" -Level Info
+        
+        if (!(Test-Path $FilePath)) {
+            throw "Fichier de sauvegarde introuvable : $FilePath"
+        }
+        
+        $Computers = Import-Csv -Path $FilePath -Encoding UTF8
+        $Results = @()
+        
+        foreach ($Computer in $Computers) {
+            try {
+                $ExistingComputer = Get-ADComputer -Filter "SamAccountName -eq '$($Computer.SamAccountName)'" -ErrorAction SilentlyContinue
+                
+                if (!$DryRun) {
+                    if ($ExistingComputer) {
+                        # Mise a jour ordinateur existant
+                        Set-ADComputer -Identity $Computer.SamAccountName -Description $Computer.Description -Location $Computer.Location
+                        $Action = "Mis a jour"
+                    }
+                    else {
+                        # Note: Creation d'ordinateur necessite des parametres specifiques
+                        Write-LogMessage "Creation d'ordinateur non implementee dans cette version : $($Computer.SamAccountName)" -Level Warning
+                        $Action = "Ignore (creation)"
+                    }
+                }
+                else {
+                    $Action = if ($ExistingComputer) { "Serait mis a jour" } else { "Serait cree" }
+                }
+                
+                $Results += [PSCustomObject]@{
+                    SamAccountName = $Computer.SamAccountName
+                    Action         = $Action
+                    Success        = $true
+                }
+            }
+            catch {
+                $Results += [PSCustomObject]@{
+                    SamAccountName = $Computer.SamAccountName
+                    Action         = "Erreur"
+                    Success        = $false
+                    Error          = $_.Exception.Message
+                }
+            }
+        }
+        
+        $SuccessCount = ($Results | Where-Object Success).Count
+        Write-LogMessage "$Mode Ordinateurs traites : $SuccessCount/$($Computers.Count)" -Level Info
+        
+        return @{
+            Success = $true
+            Count   = $SuccessCount
+            Total   = $Computers.Count
+            Results = $Results
+        }
+    }
+    catch {
+        Write-LogMessage "Erreur restauration ordinateurs : $($_.Exception.Message)" -Level Error
+        return @{ Success = $false; Error = $_.Exception.Message }
+    }
+}
+
+function Restore-ADOrganizationalUnits {
+    <#
+    .SYNOPSIS
+        Restaure les unites organisationnelles depuis un fichier CSV
+    .PARAMETER FilePath
+        Chemin du fichier CSV de sauvegarde
+    .PARAMETER DryRun
+        Mode simulation sans modification reelle
+    #>
+    param(
+        [Parameter(Mandatory)]
+        [string]$FilePath,
+        
+        [switch]$DryRun
+    )
+    
+    try {
+        $Mode = if ($DryRun) { $Config.Messages.DryRun } else { "" }
+        Write-LogMessage "$Mode Debut restauration OU depuis $FilePath" -Level Info
+        
+        if (!(Test-Path $FilePath)) {
+            throw "Fichier de sauvegarde introuvable : $FilePath"
+        }
+        
+        $OUs = Import-Csv -Path $FilePath -Encoding UTF8
+        $Results = @()
+        
+        # Tri par profondeur de DN pour creer les OU parents en premier
+        $SortedOUs = $OUs | Sort-Object { ($_.DistinguishedName -split ',').Count }
+        
+        foreach ($OU in $SortedOUs) {
+            try {
+                $ExistingOU = Get-ADOrganizationalUnit -Filter "DistinguishedName -eq '$($OU.DistinguishedName)'" -ErrorAction SilentlyContinue
+                
+                if (!$DryRun) {
+                    if ($ExistingOU) {
+                        # Mise a jour OU existante
+                        Set-ADOrganizationalUnit -Identity $OU.DistinguishedName -Description $OU.Description -City $OU.City -Country $OU.Country
+                        $Action = "Mis a jour"
+                    }
+                    else {
+                        # Creation nouvelle OU
+                        $ParentPath = ($OU.DistinguishedName -split ',', 2)[1]
+                        New-ADOrganizationalUnit -Name $OU.Name -Path $ParentPath -Description $OU.Description
+                        $Action = "Cree"
+                    }
+                }
+                else {
+                    $Action = if ($ExistingOU) { "Serait mis a jour" } else { "Serait cree" }
+                }
+                
+                $Results += [PSCustomObject]@{
+                    Name    = $OU.Name
+                    Action  = $Action
+                    Success = $true
+                }
+            }
+            catch {
+                $Results += [PSCustomObject]@{
+                    Name    = $OU.Name
+                    Action  = "Erreur"
+                    Success = $false
+                    Error   = $_.Exception.Message
+                }
+            }
+        }
+        
+        $SuccessCount = ($Results | Where-Object Success).Count
+        Write-LogMessage "$Mode OU traitees : $SuccessCount/$($OUs.Count)" -Level Info
+        
+        return @{
+            Success = $true
+            Count   = $SuccessCount
+            Total   = $OUs.Count
+            Results = $Results
+        }
+    }
+    catch {
+        Write-LogMessage "Erreur restauration OU : $($_.Exception.Message)" -Level Error
         return @{ Success = $false; Error = $_.Exception.Message }
     }
 }
@@ -524,7 +785,7 @@ function Restore-GPOs {
     
     try {
         $Mode = if ($DryRun) { $Config.Messages.DryRun } else { "" }
-        Write-LogMessage "$Mode Début restauration GPO depuis $BackupPath" -Level Info
+        Write-LogMessage "$Mode Debut restauration GPO depuis $BackupPath" -Level Info
         
         if (!(Test-Path $BackupPath)) {
             throw "Dossier de sauvegarde introuvable : $BackupPath"
@@ -544,16 +805,16 @@ function Restore-GPOs {
                     $ExistingGPO = Get-GPO -Name $GPOBackup.Name -ErrorAction SilentlyContinue
                     if ($ExistingGPO) {
                         Import-GPO -BackupId $GPOBackup.BackupId -Path $BackupPath -TargetName $GPOBackup.Name
-                        $Action = "Restauré (écrasé)"
+                        $Action = "Restaure (ecrase)"
                     }
                     else {
                         Import-GPO -BackupId $GPOBackup.BackupId -Path $BackupPath -TargetName $GPOBackup.Name -CreateIfNeeded
-                        $Action = "Restauré (créé)"
+                        $Action = "Restaure (cree)"
                     }
                 }
                 else {
                     $ExistingGPO = Get-GPO -Name $GPOBackup.Name -ErrorAction SilentlyContinue
-                    $Action = if ($ExistingGPO) { "Serait restauré (écrasé)" } else { "Serait restauré (créé)" }
+                    $Action = if ($ExistingGPO) { "Serait restaure (ecrase)" } else { "Serait restaure (cree)" }
                 }
                 
                 $Results += [PSCustomObject]@{
@@ -573,7 +834,7 @@ function Restore-GPOs {
         }
         
         $SuccessCount = ($Results | Where-Object Success).Count
-        Write-LogMessage "$Mode GPO traitées : $SuccessCount/$($BackupReport.Count)" -Level Info
+        Write-LogMessage "$Mode GPO traitees : $SuccessCount/$($BackupReport.Count)" -Level Info
         
         return @{
             Success = $true
@@ -589,260 +850,498 @@ function Restore-GPOs {
 }
 
 # ===================================================================================================
-# FONCTIONS DE TEST ET VALIDATION
+# FONCTIONS DE RESTAURATION (AJOUTS)
 # ===================================================================================================
 
-function Test-BackupIntegrity {
+function Restore-ADGroups {
     <#
     .SYNOPSIS
-        Teste l'intégrité des fichiers de sauvegarde
-    .PARAMETER BackupPath
-        Chemin du dossier de sauvegarde à tester
+        Restaure les groupes Active Directory depuis un fichier CSV
+    .PARAMETER FilePath
+        Chemin du fichier CSV de sauvegarde
+    .PARAMETER DryRun
+        Mode simulation sans modification reelle
     #>
     param(
         [Parameter(Mandatory)]
-        [string]$BackupPath
+        [string]$FilePath,
+        
+        [switch]$DryRun
     )
     
     try {
-        Write-LogMessage "Début test d'intégrité des sauvegardes dans $BackupPath" -Level Info
+        $Mode = if ($DryRun) { $Config.Messages.DryRun } else { "" }
+        Write-LogMessage "$Mode Debut restauration groupes depuis $FilePath" -Level Info
         
-        $TestResults = @{
-            FilesFound   = @()
-            FilesValid   = @()
-            FilesInvalid = @()
-            GPOBackups   = @()
+        if (!(Test-Path $FilePath)) {
+            throw "Fichier de sauvegarde introuvable : $FilePath"
         }
         
-        # Test des fichiers CSV
-        $CSVFiles = Get-ChildItem -Path $BackupPath -Filter "*.csv" -Recurse
-        foreach ($File in $CSVFiles) {
-            $TestResults.FilesFound += $File.Name
-            
+        $Groups = Import-Csv -Path $FilePath -Encoding UTF8
+        $Results = @()
+        
+        foreach ($Group in $Groups) {
             try {
-                $Data = Import-Csv -Path $File.FullName -Encoding UTF8
-                if ($Data.Count -gt 0) {
-                    $TestResults.FilesValid += $File.Name
+                $ExistingGroup = Get-ADGroup -Filter "SamAccountName -eq '$($Group.SamAccountName)'" -ErrorAction SilentlyContinue
+                
+                if (!$DryRun) {
+                    if ($ExistingGroup) {
+                        # Mise a jour groupe existant
+                        Set-ADGroup -Identity $Group.SamAccountName -Description $Group.Description
+                        
+                        # Restauration des membres si disponible
+                        if ($Group.Members -and $Group.Members -ne "") {
+                            $Members = $Group.Members -split ";"
+                            foreach ($Member in $Members) {
+                                try {
+                                    Add-ADGroupMember -Identity $Group.SamAccountName -Members $Member -ErrorAction SilentlyContinue
+                                }
+                                catch {
+                                    Write-LogMessage "Impossible d'ajouter le membre $Member au groupe $($Group.SamAccountName)" -Level Warning
+                                }
+                            }
+                        }
+                        $Action = "Mis a jour"
+                    }
+                    else {
+                        # Creation nouveau groupe
+                        $NewGroupParams = @{
+                            Name           = $Group.Name
+                            SamAccountName = $Group.SamAccountName
+                            GroupCategory  = $Group.GroupCategory
+                            GroupScope     = $Group.GroupScope
+                            Description    = $Group.Description
+                        }
+                        New-ADGroup @NewGroupParams
+                        $Action = "Cree"
+                    }
                 }
                 else {
-                    $TestResults.FilesInvalid += "$($File.Name) (vide)"
+                    $Action = if ($ExistingGroup) { "Serait mis a jour" } else { "Serait cree" }
+                }
+                
+                $Results += [PSCustomObject]@{
+                    SamAccountName = $Group.SamAccountName
+                    Action         = $Action
+                    Success        = $true
                 }
             }
             catch {
-                $TestResults.FilesInvalid += "$($File.Name) (format invalide)"
-            }
-        }
-        
-        # Test des sauvegardes GPO
-        $GPODirs = Get-ChildItem -Path $BackupPath -Directory | Where-Object Name -match "^GPO_"
-        foreach ($GPODir in $GPODirs) {
-            $ReportFile = Join-Path $GPODir.FullName "BackupReport.csv"
-            if (Test-Path $ReportFile) {
-                try {
-                    $GPOReport = Import-Csv -Path $ReportFile -Encoding UTF8
-                    $ValidBackups = ($GPOReport | Where-Object Success -eq $true).Count
-                    $TestResults.GPOBackups += [PSCustomObject]@{
-                        Directory    = $GPODir.Name
-                        TotalGPOs    = $GPOReport.Count
-                        ValidBackups = $ValidBackups
-                        Success      = $ValidBackups -eq $GPOReport.Count
-                    }
-                }
-                catch {
-                    $TestResults.GPOBackups += [PSCustomObject]@{
-                        Directory = $GPODir.Name
-                        Success   = $false
-                        Error     = "Rapport illisible"
-                    }
+                $Results += [PSCustomObject]@{
+                    SamAccountName = $Group.SamAccountName
+                    Action         = "Erreur"
+                    Success        = $false
+                    Error          = $_.Exception.Message
                 }
             }
         }
         
-        # Génération du rapport
-        Write-Host "`n=== RAPPORT DE TEST D'INTÉGRITÉ ===" -ForegroundColor Cyan
-        Write-Host "Fichiers trouvés : $($TestResults.FilesFound.Count)" -ForegroundColor White
-        Write-Host "Fichiers valides : $($TestResults.FilesValid.Count)" -ForegroundColor Green
-        Write-Host "Fichiers invalides : $($TestResults.FilesInvalid.Count)" -ForegroundColor $(if ($TestResults.FilesInvalid.Count -eq 0) { 'Green' }else { 'Red' })
+        $SuccessCount = ($Results | Where-Object Success).Count
+        Write-LogMessage "$Mode Groupes traites : $SuccessCount/$($Groups.Count)" -Level Info
         
-        if ($TestResults.FilesInvalid.Count -gt 0) {
-            Write-Host "Fichiers problématiques :" -ForegroundColor Yellow
-            $TestResults.FilesInvalid | ForEach-Object { Write-Host "  - $_" -ForegroundColor Red }
+        return @{
+            Success = $true
+            Count   = $SuccessCount
+            Total   = $Groups.Count
+            Results = $Results
         }
-        
-        Write-Host "`nSauvegardes GPO : $($TestResults.GPOBackups.Count)" -ForegroundColor White
-        $TestResults.GPOBackups | ForEach-Object {
-            $Color = if ($_.Success) { "Green" } else { "Red" }
-            Write-Host "  $($_.Directory) : $($_.ValidBackups)/$($_.TotalGPOs) GPO" -ForegroundColor $Color
-        }
-        
-        Write-LogMessage "Test d'intégrité terminé" -Level Info
-        return $TestResults
     }
     catch {
-        Write-LogMessage "Erreur lors du test d'intégrité : $($_.Exception.Message)" -Level Error
-        return $null
+        Write-LogMessage "Erreur restauration groupes : $($_.Exception.Message)" -Level Error
+        return @{ Success = $false; Error = $_.Exception.Message }
     }
 }
 
-function Test-RestoreSimulation {
+function Restore-ADComputers {
     <#
     .SYNOPSIS
-        Effectue une simulation complète de restauration pour valider les sauvegardes
+        Restaure les ordinateurs Active Directory depuis un fichier CSV
+    .PARAMETER FilePath
+        Chemin du fichier CSV de sauvegarde
+    .PARAMETER DryRun
+        Mode simulation sans modification reelle
     #>
     param(
         [Parameter(Mandatory)]
-        [string]$BackupPath
+        [string]$FilePath,
+        
+        [switch]$DryRun
     )
     
-    Write-LogMessage "Début simulation de restauration depuis $BackupPath" -Level Info
-    
-    $SimulationResults = @{
-        Users          = $null
-        Groups         = $null
-        Computers      = $null
-        GPOs           = $null
-        OverallSuccess = $false
+    try {
+        $Mode = if ($DryRun) { $Config.Messages.DryRun } else { "" }
+        Write-LogMessage "$Mode Debut restauration ordinateurs depuis $FilePath" -Level Info
+        
+        if (!(Test-Path $FilePath)) {
+            throw "Fichier de sauvegarde introuvable : $FilePath"
+        }
+        
+        $Computers = Import-Csv -Path $FilePath -Encoding UTF8
+        $Results = @()
+        
+        foreach ($Computer in $Computers) {
+            try {
+                $ExistingComputer = Get-ADComputer -Filter "SamAccountName -eq '$($Computer.SamAccountName)'" -ErrorAction SilentlyContinue
+                
+                if (!$DryRun) {
+                    if ($ExistingComputer) {
+                        # Mise a jour ordinateur existant
+                        Set-ADComputer -Identity $Computer.SamAccountName -Description $Computer.Description -Location $Computer.Location
+                        $Action = "Mis a jour"
+                    }
+                    else {
+                        # Note: Creation d'ordinateur necessite des parametres specifiques
+                        Write-LogMessage "Creation d'ordinateur non implementee dans cette version : $($Computer.SamAccountName)" -Level Warning
+                        $Action = "Ignore (creation)"
+                    }
+                }
+                else {
+                    $Action = if ($ExistingComputer) { "Serait mis a jour" } else { "Serait cree" }
+                }
+                
+                $Results += [PSCustomObject]@{
+                    SamAccountName = $Computer.SamAccountName
+                    Action         = $Action
+                    Success        = $true
+                }
+            }
+            catch {
+                $Results += [PSCustomObject]@{
+                    SamAccountName = $Computer.SamAccountName
+                    Action         = "Erreur"
+                    Success        = $false
+                    Error          = $_.Exception.Message
+                }
+            }
+        }
+        
+        $SuccessCount = ($Results | Where-Object Success).Count
+        Write-LogMessage "$Mode Ordinateurs traites : $SuccessCount/$($Computers.Count)" -Level Info
+        
+        return @{
+            Success = $true
+            Count   = $SuccessCount
+            Total   = $Computers.Count
+            Results = $Results
+        }
     }
+    catch {
+        Write-LogMessage "Erreur restauration ordinateurs : $($_.Exception.Message)" -Level Error
+        return @{ Success = $false; Error = $_.Exception.Message }
+    }
+}
+
+function Restore-ADOrganizationalUnits {
+    <#
+    .SYNOPSIS
+        Restaure les unites organisationnelles depuis un fichier CSV
+    .PARAMETER FilePath
+        Chemin du fichier CSV de sauvegarde
+    .PARAMETER DryRun
+        Mode simulation sans modification reelle
+    #>
+    param(
+        [Parameter(Mandatory)]
+        [string]$FilePath,
+        
+        [switch]$DryRun
+    )
     
     try {
-        # Test restauration utilisateurs
+        $Mode = if ($DryRun) { $Config.Messages.DryRun } else { "" }
+        Write-LogMessage "$Mode Debut restauration OU depuis $FilePath" -Level Info
+        
+        if (!(Test-Path $FilePath)) {
+            throw "Fichier de sauvegarde introuvable : $FilePath"
+        }
+        
+        $OUs = Import-Csv -Path $FilePath -Encoding UTF8
+        $Results = @()
+        
+        # Tri par profondeur de DN pour creer les OU parents en premier
+        $SortedOUs = $OUs | Sort-Object { ($_.DistinguishedName -split ',').Count }
+        
+        foreach ($OU in $SortedOUs) {
+            try {
+                $ExistingOU = Get-ADOrganizationalUnit -Filter "DistinguishedName -eq '$($OU.DistinguishedName)'" -ErrorAction SilentlyContinue
+                
+                if (!$DryRun) {
+                    if ($ExistingOU) {
+                        # Mise a jour OU existante
+                        Set-ADOrganizationalUnit -Identity $OU.DistinguishedName -Description $OU.Description -City $OU.City -Country $OU.Country
+                        $Action = "Mis a jour"
+                    }
+                    else {
+                        # Creation nouvelle OU
+                        $ParentPath = ($OU.DistinguishedName -split ',', 2)[1]
+                        New-ADOrganizationalUnit -Name $OU.Name -Path $ParentPath -Description $OU.Description
+                        $Action = "Cree"
+                    }
+                }
+                else {
+                    $Action = if ($ExistingOU) { "Serait mis a jour" } else { "Serait cree" }
+                }
+                
+                $Results += [PSCustomObject]@{
+                    Name    = $OU.Name
+                    Action  = $Action
+                    Success = $true
+                }
+            }
+            catch {
+                $Results += [PSCustomObject]@{
+                    Name    = $OU.Name
+                    Action  = "Erreur"
+                    Success = $false
+                    Error   = $_.Exception.Message
+                }
+            }
+        }
+        
+        $SuccessCount = ($Results | Where-Object Success).Count
+        Write-LogMessage "$Mode OU traitees : $SuccessCount/$($OUs.Count)" -Level Info
+        
+        return @{
+            Success = $true
+            Count   = $SuccessCount
+            Total   = $OUs.Count
+            Results = $Results
+        }
+    }
+    catch {
+        Write-LogMessage "Erreur restauration OU : $($_.Exception.Message)" -Level Error
+        return @{ Success = $false; Error = $_.Exception.Message }
+    }
+}
+
+function Restore-GPOs {
+    <#
+    .SYNOPSIS
+        Restaure les GPO depuis un dossier de sauvegarde
+    .PARAMETER BackupPath
+        Chemin du dossier de sauvegarde GPO
+    .PARAMETER DryRun
+        Mode simulation
+    #>
+    param(
+        [Parameter(Mandatory)]
+        [string]$BackupPath,
+        
+        [switch]$DryRun
+    )
+    
+    try {
+        $Mode = if ($DryRun) { $Config.Messages.DryRun } else { "" }
+        Write-LogMessage "$Mode Debut restauration GPO depuis $BackupPath" -Level Info
+        
+        if (!(Test-Path $BackupPath)) {
+            throw "Dossier de sauvegarde introuvable : $BackupPath"
+        }
+        
+        $ReportPath = Join-Path $BackupPath "BackupReport.csv"
+        if (!(Test-Path $ReportPath)) {
+            throw "Rapport de sauvegarde introuvable : $ReportPath"
+        }
+        
+        $BackupReport = Import-Csv -Path $ReportPath -Encoding UTF8
+        $Results = @()
+        
+        foreach ($GPOBackup in $BackupReport | Where-Object Success -eq $true) {
+            try {
+                if (!$DryRun) {
+                    $ExistingGPO = Get-GPO -Name $GPOBackup.Name -ErrorAction SilentlyContinue
+                    if ($ExistingGPO) {
+                        Import-GPO -BackupId $GPOBackup.BackupId -Path $BackupPath -TargetName $GPOBackup.Name
+                        $Action = "Restaure (ecrase)"
+                    }
+                    else {
+                        Import-GPO -BackupId $GPOBackup.BackupId -Path $BackupPath -TargetName $GPOBackup.Name -CreateIfNeeded
+                        $Action = "Restaure (cree)"
+                    }
+                }
+                else {
+                    $ExistingGPO = Get-GPO -Name $GPOBackup.Name -ErrorAction SilentlyContinue
+                    $Action = if ($ExistingGPO) { "Serait restaure (ecrase)" } else { "Serait restaure (cree)" }
+                }
+                
+                $Results += [PSCustomObject]@{
+                    Name    = $GPOBackup.Name
+                    Action  = $Action
+                    Success = $true
+                }
+            }
+            catch {
+                $Results += [PSCustomObject]@{
+                    Name    = $GPOBackup.Name
+                    Action  = "Erreur"
+                    Success = $false
+                    Error   = $_.Exception.Message
+                }
+            }
+        }
+        
+        $SuccessCount = ($Results | Where-Object Success).Count
+        Write-LogMessage "$Mode GPO traitees : $SuccessCount/$($BackupReport.Count)" -Level Info
+        
+        return @{
+            Success = $true
+            Count   = $SuccessCount
+            Total   = $BackupReport.Count
+            Results = $Results
+        }
+    }
+    catch {
+        Write-LogMessage "Erreur restauration GPO : $($_.Exception.Message)" -Level Error
+        return @{ Success = $false; Error = $_.Exception.Message }
+    }
+}
+
+function Start-CompleteRestore {
+    <#
+    .SYNOPSIS
+        Effectue une restauration complete de tous les objets AD et GPO
+    .PARAMETER BackupPath
+        Chemin du dossier contenant les sauvegardes
+    .PARAMETER DryRun
+        Mode simulation sans modification reelle
+    #>
+    param(
+        [Parameter(Mandatory)]
+        [string]$BackupPath,
+        
+        [switch]$DryRun
+    )
+    
+    try {
+        $Mode = if ($DryRun) { $Config.Messages.DryRun } else { "" }
+        Write-LogMessage "$Mode Debut restauration complete depuis $BackupPath" -Level Info
+        
+        if (!(Test-Path $BackupPath)) {
+            throw "Dossier de sauvegarde introuvable : $BackupPath"
+        }
+        
+        $RestoreResults = @{
+            Users          = $null
+            Groups         = $null
+            Computers      = $null
+            OUs            = $null
+            GPOs           = $null
+            OverallSuccess = $false
+            Summary        = @()
+        }
+        
+        # Ordre de restauration important : OU -> Groupes -> Utilisateurs -> Ordinateurs -> GPO
+        
+        # 1. Restauration des OU (doivent exister avant les autres objets)
+        $OUFiles = Get-ChildItem -Path $BackupPath -Filter "OrganizationalUnits_*.csv" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        if ($OUFiles) {
+            Write-Host "Restauration des OU..." -ForegroundColor Yellow
+            $RestoreResults.OUs = Restore-ADOrganizationalUnits -FilePath $OUFiles.FullName -DryRun:$DryRun
+            $RestoreResults.Summary += "OU : $($RestoreResults.OUs.Count)/$($RestoreResults.OUs.Total) restaurees"
+        }
+        
+        # 2. Restauration des groupes
+        $GroupFiles = Get-ChildItem -Path $BackupPath -Filter "Groups_*.csv" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        if ($GroupFiles) {
+            Write-Host "Restauration des groupes..." -ForegroundColor Yellow
+            $RestoreResults.Groups = Restore-ADGroups -FilePath $GroupFiles.FullName -DryRun:$DryRun
+            $RestoreResults.Summary += "Groupes : $($RestoreResults.Groups.Count)/$($RestoreResults.Groups.Total) restaures"
+        }
+        
+        # 3. Restauration des utilisateurs
         $UserFiles = Get-ChildItem -Path $BackupPath -Filter "Users_*.csv" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
         if ($UserFiles) {
-            $SimulationResults.Users = Restore-ADUsers -FilePath $UserFiles.FullName -DryRun
+            Write-Host "Restauration des utilisateurs..." -ForegroundColor Yellow
+            $RestoreResults.Users = Restore-ADUsers -FilePath $UserFiles.FullName -DryRun:$DryRun
+            $RestoreResults.Summary += "Utilisateurs : $($RestoreResults.Users.Count)/$($RestoreResults.Users.Total) restaures"
         }
         
-        # Test restauration GPO
+        # 4. Restauration des ordinateurs
+        $ComputerFiles = Get-ChildItem -Path $BackupPath -Filter "Computers_*.csv" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        if ($ComputerFiles) {
+            Write-Host "Restauration des ordinateurs..." -ForegroundColor Yellow
+            $RestoreResults.Computers = Restore-ADComputers -FilePath $ComputerFiles.FullName -DryRun:$DryRun
+            $RestoreResults.Summary += "Ordinateurs : $($RestoreResults.Computers.Count)/$($RestoreResults.Computers.Total) restaures"
+        }
+        
+        # 5. Restauration des GPO
         $GPODirs = Get-ChildItem -Path $BackupPath -Directory | Where-Object Name -match "^GPO_" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
         if ($GPODirs) {
-            $SimulationResults.GPOs = Restore-GPOs -BackupPath $GPODirs.FullName -DryRun
+            Write-Host "Restauration des GPO..." -ForegroundColor Yellow
+            $RestoreResults.GPOs = Restore-GPOs -BackupPath $GPODirs.FullName -DryRun:$DryRun
+            $RestoreResults.Summary += "GPO : $($RestoreResults.GPOs.Count)/$($RestoreResults.GPOs.Total) restaurees"
         }
         
-        # Évaluation globale
-        $AllTests = @($SimulationResults.Users, $SimulationResults.Groups, $SimulationResults.Computers, $SimulationResults.GPOs) | Where-Object { $_ -ne $null }
-        $SimulationResults.OverallSuccess = ($AllTests | Where-Object Success).Count -eq $AllTests.Count
+        # Evaluation du succes global
+        $AllOperations = @($RestoreResults.Users, $RestoreResults.Groups, $RestoreResults.Computers, $RestoreResults.OUs, $RestoreResults.GPOs) | Where-Object { $_ -ne $null }
+        $SuccessfulOperations = ($AllOperations | Where-Object Success).Count
+        $RestoreResults.OverallSuccess = $SuccessfulOperations -eq $AllOperations.Count
         
-        # Rapport de simulation
-        Write-Host "`n=== RAPPORT DE SIMULATION DE RESTAURATION ===" -ForegroundColor Cyan
+        # Rapport final
+        Write-Host ""
+        Write-Host "=== RAPPORT DE RESTAURATION COMPLETE ===" -ForegroundColor Cyan
+        $RestoreResults.Summary | ForEach-Object { Write-Host "  $_" -ForegroundColor White }
         
-        if ($SimulationResults.Users) {
-            Write-Host "Utilisateurs : $($SimulationResults.Users.Count)/$($SimulationResults.Users.Total) traités" -ForegroundColor $(if ($SimulationResults.Users.Success) { 'Green' }else { 'Red' })
-        }
+        $Status = if ($RestoreResults.OverallSuccess) { "SUCCES" } else { "PARTIEL" }
+        $Color = if ($RestoreResults.OverallSuccess) { "Green" } else { "Yellow" }
+        Write-Host ""
+        Write-Host "Statut global : $Status ($SuccessfulOperations/$($AllOperations.Count) operations reussies)" -ForegroundColor $Color
         
-        if ($SimulationResults.GPOs) {
-            Write-Host "GPO : $($SimulationResults.GPOs.Count)/$($SimulationResults.GPOs.Total) traitées" -ForegroundColor $(if ($SimulationResults.GPOs.Success) { 'Green' }else { 'Red' })
-        }
+        # Notification mail
+        $EmailSubject = "$Mode Restauration complete $Status"
+        $EmailBody = "Restauration complete terminee`n"
+        $EmailBody += "Statut : $Status`n"
+        $EmailBody += "Operations reussies : $SuccessfulOperations/$($AllOperations.Count)`n"
+        $EmailBody += "Details :`n" + ($RestoreResults.Summary -join "`n")
         
-        $Status = if ($SimulationResults.OverallSuccess) { "SUCCÈS" } else { "ÉCHEC" }
-        $Color = if ($SimulationResults.OverallSuccess) { "Green" } else { "Red" }
-        Write-Host "`nStatut global : $Status" -ForegroundColor $Color
+        Send-NotificationEmail -Subject $EmailSubject -Body $EmailBody -IsError:(!$RestoreResults.OverallSuccess)
         
-        Write-LogMessage "Simulation de restauration terminée - Succès : $($SimulationResults.OverallSuccess)" -Level Info
-        return $SimulationResults
+        Write-LogMessage "$Mode Restauration complete terminee - Succes : $($RestoreResults.OverallSuccess)" -Level Info
+        return $RestoreResults
     }
     catch {
-        Write-LogMessage "Erreur lors de la simulation : $($_.Exception.Message)" -Level Error
-        return $SimulationResults
+        Write-LogMessage "Erreur lors de la restauration complete : $($_.Exception.Message)" -Level Error
+        return @{ Success = $false; Error = $_.Exception.Message }
     }
 }
 
-# ===================================================================================================
-# FONCTIONS DE GESTION
-# ===================================================================================================
-
-function Invoke-BackupRotation {
+function Select-BackupDirectory {
     <#
     .SYNOPSIS
-        Effectue la rotation des sauvegardes selon la politique de rétention
+        Permet de selectionner un dossier de sauvegarde pour restauration complete
     #>
     
-    try {
-        Write-LogMessage "Début rotation des sauvegardes (rétention : $($Config.RetentionDays) jours)" -Level Info
-        
-        $CutoffDate = (Get-Date).AddDays(-$Config.RetentionDays)
-        $DeletedItems = 0
-        
-        # Rotation des fichiers CSV
-        $OldFiles = Get-ChildItem -Path $Config.BackupRootPath -Filter "*.csv" -Recurse | 
-        Where-Object LastWriteTime -lt $CutoffDate
-        
-        foreach ($File in $OldFiles) {
-            Remove-Item -Path $File.FullName -Force
-            $DeletedItems++
-            Write-LogMessage "Fichier supprimé : $($File.Name)" -Level Info
-        }
-        
-        # Rotation des dossiers GPO
-        $OldGPODirs = Get-ChildItem -Path $Config.BackupRootPath -Directory | 
-        Where-Object { $_.Name -match "^GPO_" -and $_.LastWriteTime -lt $CutoffDate }
-        
-        foreach ($Dir in $OldGPODirs) {
-            Remove-Item -Path $Dir.FullName -Recurse -Force
-            $DeletedItems++
-            Write-LogMessage "Dossier GPO supprimé : $($Dir.Name)" -Level Info
-        }
-        
-        Write-LogMessage "Rotation terminée - $DeletedItems éléments supprimés" -Level Info
-        return $DeletedItems
-    }
-    catch {
-        Write-LogMessage "Erreur lors de la rotation : $($_.Exception.Message)" -Level Error
-        return -1
-    }
-}
-
-function Send-NotificationEmail {
-    <#
-    .SYNOPSIS
-        Envoie une notification par mail
-    .PARAMETER Subject
-        Sujet du mail
-    .PARAMETER Body
-        Corps du message
-    .PARAMETER IsError
-        Indique si c'est une notification d'erreur
-    #>
-    param(
-        [Parameter(Mandatory)]
-        [string]$Subject,
-        
-        [Parameter(Mandatory)]
-        [string]$Body,
-        
-        [switch]$IsError
-    )
+    # Recherche des dossiers de sauvegarde complete
+    $CompleteDirs = Get-ChildItem -Path $Config.BackupRootPath -Directory | 
+    Where-Object Name -match "_COMPLETE$" | 
+    Sort-Object LastWriteTime -Descending
     
-    try {
-        if (!$Config.SMTPServer) {
-            Write-LogMessage "Configuration SMTP non définie - notification ignorée" -Level Warning
-            return
-        }
-        
-        $Credential = Get-Credential -Message "Credentials SMTP pour notification"
-        if (!$Credential) {
-            Write-LogMessage "Credentials SMTP non fournis - notification ignorée" -Level Warning
-            return
-        }
-        
-        $MailParams = @{
-            SmtpServer = $Config.SMTPServer
-            Port       = $Config.SMTPPort
-            From       = $Config.SMTPFrom
-            To         = $Config.SMTPTo
-            Subject    = "$($Config.SMTPSubject) - $Subject"
-            Body       = $Body
-            Credential = $Credential
-        }
-        
-        if ($Config.SMTPUseSSL) {
-            $MailParams.UseSSL = $true
-        }
-        
-        Send-MailMessage @MailParams
-        Write-LogMessage "Notification envoyée : $Subject" -Level Info
+    # Inclure aussi les dossiers par date
+    $DateDirs = Get-ChildItem -Path $Config.BackupRootPath -Directory | 
+    Where-Object Name -match "^\d{8}(_\d{6})?$" | 
+    Sort-Object LastWriteTime -Descending
+    
+    $AllDirs = @($CompleteDirs) + @($DateDirs) | Sort-Object LastWriteTime -Descending
+    
+    if ($AllDirs.Count -eq 0) {
+        Write-Host "Aucun dossier de sauvegarde trouve" -ForegroundColor Red
+        return $null
     }
-    catch {
-        Write-LogMessage "Erreur envoi notification : $($_.Exception.Message)" -Level Error
+    
+    Write-Host ""
+    Write-Host "Dossiers de sauvegarde disponibles :" -ForegroundColor Cyan
+    for ($i = 0; $i -lt $AllDirs.Count; $i++) {
+        $Type = if ($AllDirs[$i].Name -match "_COMPLETE$") { "[COMPLETE]" } else { "[PARTIEL]" }
+        $Size = Get-ChildItem -Path $AllDirs[$i].FullName -Recurse | Measure-Object -Property Length -Sum | ForEach-Object { [math]::Round($_.Sum / 1MB, 2) }
+        Write-Host "$($i + 1). $($AllDirs[$i].Name) $Type - $Size MB - $($AllDirs[$i].LastWriteTime)" -ForegroundColor White
     }
+    
+    do {
+        $Selection = Read-Host "`nSelectionnez un dossier (numero) ou 0 pour annuler"
+        if ($Selection -eq "0") { return $null }
+    } while (![int]::TryParse($Selection, [ref]$null) -or $Selection -lt 1 -or $Selection -gt $AllDirs.Count)
+    
+    return $AllDirs[$Selection - 1]
 }
 
 # ===================================================================================================
@@ -860,7 +1359,7 @@ function Show-MainMenu {
     Write-Host ("=" * $Config.Messages.Welcome.Length) -ForegroundColor Cyan
     Write-Host ""
     
-    # Affichage des informations système
+    # Affichage des informations systeme
     $AuthInfo = Test-ADAuthority
     Write-Host "Domaine : " -NoNewline
     Write-Host $AuthInfo.Domain -ForegroundColor $(if ($AuthInfo.DomainConnected) { 'Green' }else { 'Red' })
@@ -872,21 +1371,24 @@ function Show-MainMenu {
     Write-Host "1. Sauvegarder Utilisateurs" -ForegroundColor White
     Write-Host "2. Sauvegarder Groupes" -ForegroundColor White
     Write-Host "3. Sauvegarder Ordinateurs" -ForegroundColor White
-    Write-Host "4. Sauvegarder Unités Organisationnelles" -ForegroundColor White
+    Write-Host "4. Sauvegarder Unites Organisationnelles" -ForegroundColor White
     Write-Host "5. Sauvegarder GPO" -ForegroundColor White
-    Write-Host "6. Sauvegarde COMPLÈTE" -ForegroundColor Green
+    Write-Host "6. Sauvegarde COMPLETE" -ForegroundColor Green
     Write-Host ""
     
     Write-Host "RESTAURATIONS" -ForegroundColor Yellow
     Write-Host "7. Restaurer Utilisateurs" -ForegroundColor White
-    Write-Host "8. Restaurer GPO" -ForegroundColor White
+    Write-Host "8. Restaurer Groupes" -ForegroundColor White
+    Write-Host "9. Restaurer Ordinateurs" -ForegroundColor White
+    Write-Host "10. Restaurer Unites Organisationnelles" -ForegroundColor White
+    Write-Host "11. Restaurer GPO" -ForegroundColor White
+    Write-Host "12. Restauration COMPLETE" -ForegroundColor Green
     Write-Host ""
     
     Write-Host "TESTS ET MAINTENANCE" -ForegroundColor Yellow
-    Write-Host "9. Test d'intégrité des sauvegardes" -ForegroundColor White
-    Write-Host "10. Simulation de restauration" -ForegroundColor White
-    Write-Host "11. Rotation des sauvegardes" -ForegroundColor White
-    Write-Host ""
+    Write-Host "13. Test d'integrite des sauvegardes" -ForegroundColor White
+    Write-Host "14. Simulation de restauration" -ForegroundColor White
+    Write-Host "15. Rotation des sauvegardes" -ForegroundColor White
     
     Write-Host "0. Quitter" -ForegroundColor Red
     Write-Host ""
@@ -921,7 +1423,7 @@ function Confirm-Action {
 function Select-BackupFile {
     <#
     .SYNOPSIS
-        Permet de sélectionner un fichier de sauvegarde
+        Permet de selectionner un fichier de sauvegarde
     .PARAMETER Filter
         Filtre pour les fichiers (ex: "*.csv", "GPO_*")
     #>
@@ -934,18 +1436,19 @@ function Select-BackupFile {
     Sort-Object LastWriteTime -Descending
     
     if ($Files.Count -eq 0) {
-        Write-Host "Aucun fichier de sauvegarde trouvé avec le filtre : $Filter" -ForegroundColor Red
+        Write-Host "Aucun fichier de sauvegarde trouve avec le filtre : $Filter" -ForegroundColor Red
         return $null
     }
     
-    Write-Host "`nFichiers de sauvegarde disponibles :" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "Fichiers de sauvegarde disponibles :" -ForegroundColor Cyan
     for ($i = 0; $i -lt $Files.Count; $i++) {
         $Size = [math]::Round($Files[$i].Length / 1KB, 2)
         Write-Host "$($i + 1). $($Files[$i].Name) - $Size KB - $($Files[$i].LastWriteTime)" -ForegroundColor White
     }
     
     do {
-        $Selection = Read-Host "`nSélectionnez un fichier (numéro) ou 0 pour annuler"
+        $Selection = Read-Host "`nSelectionnez un fichier (numero) ou 0 pour annuler"
         if ($Selection -eq "0") { return $null }
     } while (![int]::TryParse($Selection, [ref]$null) -or $Selection -lt 1 -or $Selection -gt $Files.Count)
     
@@ -959,7 +1462,7 @@ function Select-BackupFile {
 function Start-ADBackupScript {
     <#
     .SYNOPSIS
-        Point d'entrée principal du script
+        Point d'entree principal du script
     #>
     
     # Initialisation
@@ -968,15 +1471,15 @@ function Start-ADBackupScript {
         return
     }
     
-    # Vérification des droits
+    # Verification des droits
     $AuthInfo = Test-ADAuthority
     if (!$AuthInfo.DomainConnected) {
-        Write-Error "Impossible de se connecter à Active Directory : $($AuthInfo.Error)"
+        Write-Error "Impossible de se connecter a Active Directory : $($AuthInfo.Error)"
         return
     }
     
     if (!$AuthInfo.IsAdmin) {
-        Write-Warning "Droits administrateur non détectés - certaines opérations peuvent échouer"
+        Write-Warning "Droits administrateur non detectes - certaines operations peuvent echouer"
     }
     
     # Boucle principale du menu
@@ -985,83 +1488,89 @@ function Start-ADBackupScript {
         
         switch ($Choice) {
             "1" {
-                Write-Host "`nSauvegarde des utilisateurs..." -ForegroundColor Yellow
+                Write-Host ""
+                Write-Host "Sauvegarde des utilisateurs..." -ForegroundColor Yellow
                 $BackupPath = Join-Path $Config.BackupRootPath (Get-Date -Format "yyyyMMdd")
                 if (!(Test-Path $BackupPath)) { New-Item -Path $BackupPath -ItemType Directory -Force | Out-Null }
                 
                 $Result = Backup-ADUsers -Path $BackupPath
                 if ($Result.Success) {
-                    Write-Host "Sauvegarde réussie : $($Result.Count) utilisateurs" -ForegroundColor Green
+                    Write-Host "Sauvegarde reussie : $($Result.Count) utilisateurs" -ForegroundColor Green
                 }
                 else {
                     Write-Host "Erreur : $($Result.Error)" -ForegroundColor Red
                 }
-                Read-Host "`nAppuyez sur Entrée pour continuer"
+                Read-Host "`nAppuyez sur Entree pour continuer"
             }
             
             "2" {
-                Write-Host "`nSauvegarde des groupes..." -ForegroundColor Yellow
+                Write-Host ""
+                Write-Host "Sauvegarde des groupes..." -ForegroundColor Yellow
                 $BackupPath = Join-Path $Config.BackupRootPath (Get-Date -Format "yyyyMMdd")
                 if (!(Test-Path $BackupPath)) { New-Item -Path $BackupPath -ItemType Directory -Force | Out-Null }
                 
                 $Result = Backup-ADGroups -Path $BackupPath
                 if ($Result.Success) {
-                    Write-Host "Sauvegarde réussie : $($Result.Count) groupes" -ForegroundColor Green
+                    Write-Host "Sauvegarde reussie : $($Result.Count) groupes" -ForegroundColor Green
                 }
                 else {
                     Write-Host "Erreur : $($Result.Error)" -ForegroundColor Red
                 }
-                Read-Host "`nAppuyez sur Entrée pour continuer"
+                Read-Host "`nAppuyez sur Entree pour continuer"
             }
             
             "3" {
-                Write-Host "`nSauvegarde des ordinateurs..." -ForegroundColor Yellow
+                Write-Host ""
+                Write-Host "Sauvegarde des ordinateurs..." -ForegroundColor Yellow
                 $BackupPath = Join-Path $Config.BackupRootPath (Get-Date -Format "yyyyMMdd")
                 if (!(Test-Path $BackupPath)) { New-Item -Path $BackupPath -ItemType Directory -Force | Out-Null }
                 
                 $Result = Backup-ADComputers -Path $BackupPath
                 if ($Result.Success) {
-                    Write-Host "Sauvegarde réussie : $($Result.Count) ordinateurs" -ForegroundColor Green
+                    Write-Host "Sauvegarde reussie : $($Result.Count) ordinateurs" -ForegroundColor Green
                 }
                 else {
                     Write-Host "Erreur : $($Result.Error)" -ForegroundColor Red
                 }
-                Read-Host "`nAppuyez sur Entrée pour continuer"
+                Read-Host "`nAppuyez sur Entree pour continuer"
             }
             
             "4" {
-                Write-Host "`nSauvegarde des OU..." -ForegroundColor Yellow
+                Write-Host ""
+                Write-Host "Sauvegarde des OU..." -ForegroundColor Yellow
                 $BackupPath = Join-Path $Config.BackupRootPath (Get-Date -Format "yyyyMMdd")
                 if (!(Test-Path $BackupPath)) { New-Item -Path $BackupPath -ItemType Directory -Force | Out-Null }
                 
                 $Result = Backup-ADOrganizationalUnits -Path $BackupPath
                 if ($Result.Success) {
-                    Write-Host "Sauvegarde réussie : $($Result.Count) OU" -ForegroundColor Green
+                    Write-Host "Sauvegarde reussie : $($Result.Count) OU" -ForegroundColor Green
                 }
                 else {
                     Write-Host "Erreur : $($Result.Error)" -ForegroundColor Red
                 }
-                Read-Host "`nAppuyez sur Entrée pour continuer"
+                Read-Host "`nAppuyez sur Entree pour continuer"
             }
             
             "5" {
-                Write-Host "`nSauvegarde des GPO..." -ForegroundColor Yellow
+                Write-Host ""
+                Write-Host "Sauvegarde des GPO..." -ForegroundColor Yellow
                 $BackupPath = Join-Path $Config.BackupRootPath (Get-Date -Format "yyyyMMdd")
                 if (!(Test-Path $BackupPath)) { New-Item -Path $BackupPath -ItemType Directory -Force | Out-Null }
                 
                 $Result = Backup-GPOs -Path $BackupPath
                 if ($Result.Success) {
-                    Write-Host "Sauvegarde réussie : $($Result.Count)/$($Result.Total) GPO" -ForegroundColor Green
+                    Write-Host "Sauvegarde reussie : $($Result.Count)/$($Result.Total) GPO" -ForegroundColor Green
                 }
                 else {
                     Write-Host "Erreur : $($Result.Error)" -ForegroundColor Red
                 }
-                Read-Host "`nAppuyez sur Entrée pour continuer"
+                Read-Host "`nAppuyez sur Entree pour continuer"
             }
             
             "6" {
-                if (Confirm-Action "Lancer une sauvegarde complète (Utilisateurs, Groupes, Ordinateurs, OU, GPO) ?") {
-                    Write-Host "`nSauvegarde complète en cours..." -ForegroundColor Yellow
+                if (Confirm-Action "Lancer une sauvegarde complete (Utilisateurs, Groupes, Ordinateurs, OU, GPO) ?") {
+                    Write-Host ""
+                    Write-Host "Sauvegarde complete en cours..." -ForegroundColor Yellow
                     $BackupPath = Join-Path $Config.BackupRootPath (Get-Date -Format "yyyyMMdd_HHmmss_COMPLETE")
                     New-Item -Path $BackupPath -ItemType Directory -Force | Out-Null
                     
@@ -1073,13 +1582,14 @@ function Start-ADBackupScript {
                     $Results += Backup-GPOs -Path $BackupPath
                     
                     $SuccessCount = ($Results | Where-Object Success).Count
-                    Write-Host "`nSauvegarde complète : $SuccessCount/5 opérations réussies" -ForegroundColor $(if ($SuccessCount -eq 5) { 'Green' }else { 'Yellow' })
+                    Write-Host ""
+                    Write-Host "Sauvegarde complete : $SuccessCount/5 operations reussies" -ForegroundColor $(if ($SuccessCount -eq 5) { 'Green' }else { 'Yellow' })
                     
                     # Notification mail
-                    $EmailBody = "Sauvegarde complète terminée`n$SuccessCount/5 opérations réussies`nChemin : $BackupPath"
-                    Send-NotificationEmail -Subject "Sauvegarde complète" -Body $EmailBody -IsError:($SuccessCount -lt 5)
+                    $EmailBody = "Sauvegarde complete terminee`n$SuccessCount/5 operations reussies`nChemin : $BackupPath"
+                    Send-NotificationEmail -Subject "Sauvegarde complete" -Body $EmailBody -IsError:($SuccessCount -lt 5)
                 }
-                Read-Host "`nAppuyez sur Entrée pour continuer"
+                Read-Host "`nAppuyez sur Entree pour continuer"
             }
             
             "7" {
@@ -1090,72 +1600,155 @@ function Start-ADBackupScript {
                         $Result = Restore-ADUsers -FilePath $SelectedFile.FullName -DryRun:$DryRun
                         
                         if ($Result.Success) {
-                            Write-Host "Restauration réussie : $($Result.Count)/$($Result.Total) utilisateurs" -ForegroundColor Green
+                            Write-Host "Restauration reussie : $($Result.Count)/$($Result.Total) utilisateurs" -ForegroundColor Green
                         }
                         else {
                             Write-Host "Erreur : $($Result.Error)" -ForegroundColor Red
                         }
                     }
                 }
-                Read-Host "`nAppuyez sur Entrée pour continuer"
+                Read-Host "`nAppuyez sur Entree pour continuer"
             }
             
             "8" {
                 if (Confirm-Action $Config.Messages.ConfirmRestore) {
+                    $SelectedFile = Select-BackupFile -Filter "Groups_*.csv"
+                    if ($SelectedFile) {
+                        $DryRun = Confirm-Action "Effectuer une simulation (dry-run) d'abord ?"
+                        $Result = Restore-ADGroups -FilePath $SelectedFile.FullName -DryRun:$DryRun
+                        
+                        if ($Result.Success) {
+                            Write-Host "Restauration reussie : $($Result.Count)/$($Result.Total) groupes" -ForegroundColor Green
+                        }
+                        else {
+                            Write-Host "Erreur : $($Result.Error)" -ForegroundColor Red
+                        }
+                    }
+                }
+                Read-Host "`nAppuyez sur Entree pour continuer"
+            }
+            
+            "9" {
+                if (Confirm-Action $Config.Messages.ConfirmRestore) {
+                    $SelectedFile = Select-BackupFile -Filter "Computers_*.csv"
+                    if ($SelectedFile) {
+                        $DryRun = Confirm-Action "Effectuer une simulation (dry-run) d'abord ?"
+                        $Result = Restore-ADComputers -FilePath $SelectedFile.FullName -DryRun:$DryRun
+                        
+                        if ($Result.Success) {
+                            Write-Host "Restauration reussie : $($Result.Count)/$($Result.Total) ordinateurs" -ForegroundColor Green
+                        }
+                        else {
+                            Write-Host "Erreur : $($Result.Error)" -ForegroundColor Red
+                        }
+                    }
+                }
+                Read-Host "`nAppuyez sur Entree pour continuer"
+            }
+            
+            "10" {
+                if (Confirm-Action $Config.Messages.ConfirmRestore) {
+                    $SelectedFile = Select-BackupFile -Filter "OrganizationalUnits_*.csv"
+                    if ($SelectedFile) {
+                        $DryRun = Confirm-Action "Effectuer une simulation (dry-run) d'abord ?"
+                        $Result = Restore-ADOrganizationalUnits -FilePath $SelectedFile.FullName -DryRun:$DryRun
+                        
+                        if ($Result.Success) {
+                            Write-Host "Restauration reussie : $($Result.Count)/$($Result.Total) OU" -ForegroundColor Green
+                        }
+                        else {
+                            Write-Host "Erreur : $($Result.Error)" -ForegroundColor Red
+                        }
+                    }
+                }
+                Read-Host "`nAppuyez sur Entree pour continuer"
+            }
+            
+            "11" {
+                if (Confirm-Action $Config.Messages.ConfirmRestore) {
                     $GPODirs = Get-ChildItem -Path $Config.BackupRootPath -Directory | Where-Object Name -match "^GPO_"
                     if ($GPODirs) {
-                        # Sélection du dossier GPO (simplifié)
+                        # Selection du dossier GPO (simplifie)
                         $LatestGPO = $GPODirs | Sort-Object LastWriteTime -Descending | Select-Object -First 1
                         
                         $DryRun = Confirm-Action "Effectuer une simulation (dry-run) d'abord ?"
                         $Result = Restore-GPOs -BackupPath $LatestGPO.FullName -DryRun:$DryRun
                         
                         if ($Result.Success) {
-                            Write-Host "Restauration réussie : $($Result.Count)/$($Result.Total) GPO" -ForegroundColor Green
+                            Write-Host "Restauration reussie : $($Result.Count)/$($Result.Total) GPO" -ForegroundColor Green
                         }
                         else {
                             Write-Host "Erreur : $($Result.Error)" -ForegroundColor Red
                         }
                     }
                     else {
-                        Write-Host "Aucune sauvegarde GPO trouvée" -ForegroundColor Red
+                        Write-Host "Aucune sauvegarde GPO trouvee" -ForegroundColor Red
                     }
                 }
-                Read-Host "`nAppuyez sur Entrée pour continuer"
+                Read-Host "`nAppuyez sur Entree pour continuer"
             }
             
-            "9" {
-                Write-Host "`nTest d'intégrité en cours..." -ForegroundColor Yellow
+            "12" {
+                if (Confirm-Action "ATTENTION : Restauration complete de tous les objets AD et GPO. Cette operation peut prendre du temps et impacter significativement l'environnement. Continuer ?") {
+                    $SelectedDir = Select-BackupDirectory
+                    if ($SelectedDir) {
+                        $DryRun = Confirm-Action "Effectuer une simulation (dry-run) d'abord ?"
+                        
+                        Write-Host ""
+                        Write-Host "Restauration complete en cours..." -ForegroundColor Yellow
+                        Write-Host "Dossier source : $($SelectedDir.FullName)" -ForegroundColor Cyan
+                        
+                        $Result = Start-CompleteRestore -BackupPath $SelectedDir.FullName -DryRun:$DryRun
+                        
+                        if ($Result.OverallSuccess) {
+                            Write-Host ""
+                            Write-Host "Restauration complete reussie !" -ForegroundColor Green
+                        }
+                        else {
+                            Write-Host ""
+                            Write-Host "Restauration complete avec erreurs - Voir les details ci-dessus" -ForegroundColor Yellow
+                        }
+                    }
+                }
+                Read-Host "`nAppuyez sur Entree pour continuer"
+            }
+            
+            "13" {
+                Write-Host ""
+                Write-Host "Test d'integrite en cours..." -ForegroundColor Yellow
                 Test-BackupIntegrity -BackupPath $Config.BackupRootPath
-                Read-Host "`nAppuyez sur Entrée pour continuer"
+                Read-Host "`nAppuyez sur Entree pour continuer"
             }
             
-            "10" {
-                Write-Host "`nSimulation de restauration en cours..." -ForegroundColor Yellow
+            "14" {
+                Write-Host ""
+                Write-Host "Simulation de restauration en cours..." -ForegroundColor Yellow
                 Test-RestoreSimulation -BackupPath $Config.BackupRootPath
-                Read-Host "`nAppuyez sur Entrée pour continuer"
+                Read-Host "`nAppuyez sur Entree pour continuer"
             }
             
-            "11" {
+            "15" {
                 if (Confirm-Action "Lancer la rotation des sauvegardes (suppression des fichiers > $($Config.RetentionDays) jours) ?") {
                     $DeletedCount = Invoke-BackupRotation
                     if ($DeletedCount -ge 0) {
-                        Write-Host "Rotation terminée : $DeletedCount éléments supprimés" -ForegroundColor Green
+                        Write-Host "Rotation terminee : $DeletedCount elements supprimes" -ForegroundColor Green
                     }
                     else {
                         Write-Host "Erreur lors de la rotation" -ForegroundColor Red
                     }
                 }
-                Read-Host "`nAppuyez sur Entrée pour continuer"
+                Read-Host "`nAppuyez sur Entree pour continuer"
             }
             
             "0" {
-                Write-Host "`n$($Config.Messages.Goodbye)" -ForegroundColor Cyan
+                Write-Host ""
+                Write-Host $Config.Messages.Goodbye -ForegroundColor Cyan
                 break
             }
             
             default {
-                Write-Host "`nChoix invalide, veuillez réessayer." -ForegroundColor Red
+                Write-Host ""
+                Write-Host "Choix invalide, veuillez reessayer." -ForegroundColor Red
                 Start-Sleep 2
             }
         }
@@ -1178,19 +1771,28 @@ function Start-ADBackupScript {
     $Result = Backup-ADUsers -Path $BackupPath
     
 .EXAMPLE
-    # Test d'intégrité programmatique
+    # Test d'integrite programmatique
     Test-BackupIntegrity -BackupPath "C:\ADBackup"
     
 .EXAMPLE
     # Restauration avec simulation
     Restore-ADUsers -FilePath "C:\ADBackup\Users_20231201_143022.csv" -DryRun
+    
+.EXAMPLE
+    # Restauration complete avec simulation
+    $BackupDir = "C:\ADBackup\20231201_143022_COMPLETE"
+    Start-CompleteRestore -BackupPath $BackupDir -DryRun
+    
+.EXAMPLE
+    # Restauration complete reelle
+    Start-CompleteRestore -BackupPath $BackupDir
 #>
 
 # ===================================================================================================
-# POINT D'ENTRÉE
+# POINT D'ENTREE
 # ===================================================================================================
 
-# Lancement automatique si exécuté directement
+# Lancement automatique si execute directement
 if ($MyInvocation.InvocationName -ne '.') {
     Start-ADBackupScript
 }
