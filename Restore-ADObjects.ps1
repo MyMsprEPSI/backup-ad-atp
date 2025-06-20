@@ -23,7 +23,7 @@ function Restore-ADOUs {
             $ouPath = $_.DistinguishedName.Split(',', 2)[1]
             if (-not (Get-ADOrganizationalUnit -Filter "DistinguishedName -eq '$($_.DistinguishedName)'" -ErrorAction SilentlyContinue)) {
                 New-ADOrganizationalUnit -Name $_.Name -Path $ouPath -Description $_.Description
-                Write-Output "OU restaurée: $($_.Name)"
+                Write-Output "OU restauree: $($_.Name)"
             }
         }
         catch {
@@ -44,7 +44,7 @@ function Restore-ADUsers {
                     SamAccountName    = $_.SamAccountName
                     UserPrincipalName = $_.UserPrincipalName
                     Path              = $_.DistinguishedName.Split(',', 2)[1]
-                    Enabled           = $false  # Désactivé par sécurité
+                    Enabled           = $false  # Desactive par securite
                 }
                 
                 if ($_.GivenName) { $userParams.GivenName = $_.GivenName }
@@ -54,7 +54,7 @@ function Restore-ADUsers {
                 if ($_.EmailAddress) { $userParams.EmailAddress = $_.EmailAddress }
                 
                 New-ADUser @userParams
-                Write-Output "Utilisateur restauré: $($_.SamAccountName)"
+                Write-Output "Utilisateur restaure: $($_.SamAccountName)"
             }
         }
         catch {
@@ -81,7 +81,7 @@ function Restore-ADGroups {
                 if ($_.GroupCategory) { $groupParams.GroupCategory = $_.GroupCategory }
                 
                 New-ADGroup @groupParams
-                Write-Output "Groupe restauré: $($_.SamAccountName)"
+                Write-Output "Groupe restaure: $($_.SamAccountName)"
             }
         }
         catch {
@@ -106,7 +106,7 @@ function Restore-ADComputers {
                 if ($_.Description) { $computerParams.Description = $_.Description }
                 
                 New-ADComputer @computerParams
-                Write-Output "Ordinateur restauré: $($_.SamAccountName)"
+                Write-Output "Ordinateur restaure: $($_.SamAccountName)"
             }
         }
         catch {
@@ -126,7 +126,7 @@ function Restore-GroupMemberships {
             
             if ($group -and $member) {
                 Add-ADGroupMember -Identity $group -Members $member -ErrorAction SilentlyContinue
-                Write-Output "Membre ajouté: $($_.MemberName) -> $($_.GroupName)"
+                Write-Output "Membre ajoute: $($_.MemberName) -> $($_.GroupName)"
             }
         }
         catch {
@@ -170,4 +170,4 @@ if ($RestoreGPOLinks) {
     }
 }
 
-Write-Output "Restauration terminée!"
+Write-Output "Restauration terminee!"

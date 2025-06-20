@@ -30,19 +30,7 @@ echo.
 color %COLOR_OPTION%
 set /p "choix=Votre choix (0-7): "
 
-if "%choix%"=="1" goto SAUVEGARDE_RAPIDE
-if "%choix%"=="2" goto SAUVEGARDE_COMPLETE
-if "%choix%"=="3" goto PROGRAMMER_SAUVEGARDE
-if "%choix%"=="4" goto RESTAURER_OBJETS
-if "%choix%"=="5" goto VOIR_SAUVEGARDES
-if "%choix%"=="6" goto NETTOYER_SAUVEGARDES
-if "%choix%"=="7" goto TESTER_AD
-if "%choix%"=="0" goto QUITTER
-
-color %COLOR_ERREUR%
-echo Choix invalide. Appuyez sur une touche pour continuer...
-pause >nul
-goto MENU_PRINCIPAL
+...existing code...
 
 :SAUVEGARDE_RAPIDE
 cls

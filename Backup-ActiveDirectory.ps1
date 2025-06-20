@@ -30,11 +30,11 @@ function Write-Log {
 }
 
 try {
-    # Création du dossier de sauvegarde
+    # Creation du dossier de sauvegarde
     New-Item -Path $backupFolder -ItemType Directory -Force | Out-Null
-    Write-Log "Début de la sauvegarde AD dans $backupFolder"
+    Write-Log "Debut de la sauvegarde AD dans $backupFolder"
 
-    # Sauvegarde des utilisateurs avec toutes les propriétés
+    # Sauvegarde des utilisateurs avec toutes les proprietes
     Write-Log "Sauvegarde des utilisateurs..."
     Get-ADUser -Filter * -Properties * | Export-Csv -Path (Join-Path $backupFolder "Users.csv") -NoTypeInformation -Encoding UTF8
 
@@ -59,11 +59,11 @@ try {
     }
     $groupMemberships | Export-Csv -Path (Join-Path $backupFolder "GroupMemberships.csv") -NoTypeInformation -Encoding UTF8
 
-    # Sauvegarde des unités organisationnelles
+    # Sauvegarde des unites organisationnelles
     Write-Log "Sauvegarde des OUs..."
     Get-ADOrganizationalUnit -Filter * -Properties * | Export-Csv -Path (Join-Path $backupFolder "OUs.csv") -NoTypeInformation -Encoding UTF8
 
-    # Sauvegarde des ordinateurs avec détails
+    # Sauvegarde des ordinateurs avec details
     Write-Log "Sauvegarde des ordinateurs..."
     Get-ADComputer -Filter * -Properties * | Export-Csv -Path (Join-Path $backupFolder "Computers.csv") -NoTypeInformation -Encoding UTF8
 
@@ -79,13 +79,13 @@ try {
     Write-Log "Sauvegarde des comptes de service..."
     Get-ADServiceAccount -Filter * -Properties * -ErrorAction SilentlyContinue | Export-Csv -Path (Join-Path $backupFolder "ServiceAccounts.csv") -NoTypeInformation -Encoding UTF8
 
-    # Sauvegarde des sites et sous-réseaux
+    # Sauvegarde des sites et sous-reseaux
     Write-Log "Sauvegarde des sites AD..."
     Get-ADReplicationSite -Filter * -Properties * | Export-Csv -Path (Join-Path $backupFolder "Sites.csv") -NoTypeInformation -Encoding UTF8
     Get-ADReplicationSubnet -Filter * -Properties * | Export-Csv -Path (Join-Path $backupFolder "Subnets.csv") -NoTypeInformation -Encoding UTF8
 
-    # Sauvegarde des contrôleurs de domaine
-    Write-Log "Sauvegarde des contrôleurs de domaine..."
+    # Sauvegarde des controleurs de domaine
+    Write-Log "Sauvegarde des controleurs de domaine..."
     Get-ADDomainController -Filter * | Export-Csv -Path (Join-Path $backupFolder "DomainControllers.csv") -NoTypeInformation -Encoding UTF8
 
     # Sauvegarde des objets de stratégie de groupe (références)
@@ -166,24 +166,24 @@ try {
         $gpoLinks | Export-Csv -Path (Join-Path $backupFolder "GPOLinks.csv") -NoTypeInformation -Encoding UTF8
     }
 
-    # Sauvegarde complète de la base de données AD (si demandée)
+    # Sauvegarde complete de la base de donnees AD (si demandee)
     if ($FullBackup) {
-        Write-Log "Sauvegarde complète de la base de données AD..."
+        Write-Log "Sauvegarde complete de la base de donnees AD..."
         $systemStateBackup = Join-Path $backupFolder "SystemState"
         New-Item -Path $systemStateBackup -ItemType Directory -Force | Out-Null
         
-        # Utilisation de wbadmin pour la sauvegarde système
+        # Utilisation de wbadmin pour la sauvegarde systeme
         $wbResult = Start-Process -FilePath "wbadmin" -ArgumentList "start systemstatebackup -backuptarget:$systemStateBackup -quiet" -Wait -PassThru -NoNewWindow
         if ($wbResult.ExitCode -eq 0) {
-            Write-Log "Sauvegarde système réussie"
+            Write-Log "Sauvegarde systeme reussie"
         }
         else {
-            Write-Log "Erreur lors de la sauvegarde système (code: $($wbResult.ExitCode))" "ERROR"
+            Write-Log "Erreur lors de la sauvegarde systeme (code: $($wbResult.ExitCode))" "ERROR"
         }
     }
 
-    # Création d'un rapport de synthèse
-    Write-Log "Création du rapport de synthèse..."
+    # Creation d'un rapport de synthese
+    Write-Log "Creation du rapport de synthese..."
     $summary = @{
         Date              = Get-Date
         Users             = (Import-Csv (Join-Path $backupFolder "Users.csv")).Count
@@ -201,9 +201,10 @@ try {
     Where-Object { $_.CreationTime -lt (Get-Date).AddDays(-$RetentionDays) } |
     Remove-Item -Recurse -Force
 
-    Write-Log "Sauvegarde terminée avec succès"
+    Write-Log "Sauvegarde terminee avec succes"
 }
 catch {
     Write-Log "Erreur lors de la sauvegarde: $($_.Exception.Message)" "ERROR"
     throw
+}
 }
