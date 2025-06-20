@@ -66,8 +66,8 @@ function Show-OperationProgress {
     )
     
     $progressParams = @{
-        Activity = $Activity
-        Status = $Status
+        Activity        = $Activity
+        Status          = $Status
         PercentComplete = $PercentComplete
     }
     

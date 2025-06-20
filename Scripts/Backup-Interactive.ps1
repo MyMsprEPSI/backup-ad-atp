@@ -25,143 +25,147 @@ param(
     [string]$BackupPath = "C:\ADBackup"
 )
 
-# Import des modules
+# Verification des prerequis
+try {
+    Import-Module ActiveDirectory -ErrorAction Stop
+    Write-Verbose "Module ActiveDirectory charge avec succes"
+}
+catch {
+    Write-Error "Impossible de charger le module ActiveDirectory. Verifiez qu'il est installe."
+    exit 1
+}
+
+# Import des modules (avec fallback si modules non disponibles)
 $ModulePath = Join-Path $PSScriptRoot "..\Core"
-Import-Module (Join-Path $ModulePath "ADBackupCore.psm1") -Force
-Import-Module (Join-Path $ModulePath "BackupFunctions.psm1") -Force
-Import-Module (Join-Path $ModulePath "UIHelpers.psm1") -Force
+try {
+    if (Test-Path (Join-Path $ModulePath "ADBackupCore.psm1")) {
+        Import-Module (Join-Path $ModulePath "ADBackupCore.psm1") -Force
+    }
+    if (Test-Path (Join-Path $ModulePath "UIHelpers.psm1")) {
+        Import-Module (Join-Path $ModulePath "UIHelpers.psm1") -Force
+    }
+}
+catch {
+    Write-Warning "Modules non disponibles, utilisation des fonctions integrees"
+}
 
 # Configuration
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $backupFolder = Join-Path $BackupPath "Interactive_$timestamp"
+$logFile = Join-Path $backupFolder "backup.log"
 
 try {
     New-Item -Path $backupFolder -ItemType Directory -Force | Out-Null
-    Initialize-ADBackupModule -BackupPath $backupFolder
-} catch {
+    # Initialisation avec fallback
+    if (Get-Command Initialize-ADBackupModule -ErrorAction SilentlyContinue) {
+        Initialize-ADBackupModule -BackupPath $backupFolder
+    }
+}
+catch {
     Write-Error "Impossible de creer le dossier de sauvegarde: $($_.Exception.Message)"
     exit 1
 }
 
-# Configuration des options (complete avec toutes les fonctions)
+# Configuration des options complete
 $backupOptions = @{
-    "1"  = @{ Name = "Utilisateurs"; Selected = $false; Function = "Backup-ADUsers" }
-    "2"  = @{ Name = "Groupes"; Selected = $false; Function = "Backup-ADGroups" }
-    "3"  = @{ Name = "Unites Organisationnelles"; Selected = $false; Function = "Backup-ADOUs" }
-    "4"  = @{ Name = "Ordinateurs"; Selected = $false; Function = "Backup-ADComputers" }
-    "5"  = @{ Name = "Serveurs"; Selected = $false; Function = "Backup-ADServers" }
-    "6"  = @{ Name = "Controleurs de domaine"; Selected = $false; Function = "Backup-ADDomainControllers" }
-    "7"  = @{ Name = "Contacts"; Selected = $false; Function = "Backup-ADContacts" }
-    "8"  = @{ Name = "Comptes de service"; Selected = $false; Function = "Backup-ADServiceAccounts" }
-    "9"  = @{ Name = "Membres des groupes"; Selected = $false; Function = "Backup-ADGroupMemberships" }
-    "10" = @{ Name = "Sites et sous-reseaux"; Selected = $false; Function = "Backup-ADSites" }
-    "11" = @{ Name = "Trusts"; Selected = $false; Function = "Backup-ADTrusts" }
-    "12" = @{ Name = "GPO"; Selected = $false; Function = "Backup-ADGPO" }
-    "13" = @{ Name = "Schema AD"; Selected = $false; Function = "Backup-ADSchema" }
-    "14" = @{ Name = "Liens de replication"; Selected = $false; Function = "Backup-ADReplication" }
-    "15" = @{ Name = "Modeles de certificats"; Selected = $false; Function = "Backup-ADCertificates" }
+    "1"  = @{ Name = "Utilisateurs"; Selected = $false; Function = "Backup-Users" }
+    "2"  = @{ Name = "Groupes"; Selected = $false; Function = "Backup-Groups" }
+    "3"  = @{ Name = "Unites Organisationnelles"; Selected = $false; Function = "Backup-OUs" }
+    "4"  = @{ Name = "Ordinateurs"; Selected = $false; Function = "Backup-Computers" }
+    "5"  = @{ Name = "Serveurs"; Selected = $false; Function = "Backup-Servers" }
+    "6"  = @{ Name = "Controleurs de domaine"; Selected = $false; Function = "Backup-DomainControllers" }
+    "7"  = @{ Name = "Contacts"; Selected = $false; Function = "Backup-Contacts" }
+    "8"  = @{ Name = "Comptes de service"; Selected = $false; Function = "Backup-ServiceAccounts" }
+    "9"  = @{ Name = "Membres des groupes"; Selected = $false; Function = "Backup-GroupMemberships" }
+    "10" = @{ Name = "Sites et sous-reseaux"; Selected = $false; Function = "Backup-Sites" }
+    "11" = @{ Name = "Trusts"; Selected = $false; Function = "Backup-Trusts" }
+    "12" = @{ Name = "GPO"; Selected = $false; Function = "Backup-GPO" }
+    "13" = @{ Name = "Schema AD"; Selected = $false; Function = "Backup-Schema" }
+    "14" = @{ Name = "Liens de replication"; Selected = $false; Function = "Backup-Replication" }
+    "15" = @{ Name = "Modeles de certificats"; Selected = $false; Function = "Backup-Certificates" }
 }
 
-# Import du module de presets
-Import-Module (Join-Path $PSScriptRoot "..\Config\PresetManager.psm1") -Force
-
-# Fonction pour afficher les presets
-function Show-PresetMenu {
-    Clear-Host
-    Write-Host "===============================================================" -ForegroundColor Magenta
-    Write-Host "                    PRESETS DE SAUVEGARDE" -ForegroundColor Magenta
-    Write-Host "===============================================================" -ForegroundColor Magenta
-    Write-Host ""
+# Fonctions de logging avec fallback
+function Write-Log {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Message,
+        
+        [ValidateSet("INFO", "WARNING", "ERROR")]
+        [string]$Level = "INFO"
+    )
     
-    $presets = Get-BackupPresets
-    if ($presets) {
-        Write-Host " [1] $($presets.essential.name) - $($presets.essential.description)" -ForegroundColor White
-        Write-Host " [2] $($presets.complete.name) - $($presets.complete.description)" -ForegroundColor White
-        Write-Host " [3] $($presets.security.name) - $($presets.security.description)" -ForegroundColor White
-        Write-Host " [4] $($presets.infrastructure.name) - $($presets.infrastructure.description)" -ForegroundColor White
-    } else {
-        Write-Host " [1] Sauvegarde ESSENTIELLE (Users, Groups, OUs, Computers)" -ForegroundColor White
-        Write-Host " [2] Sauvegarde COMPLETE (Tout sauf Schema et Replication)" -ForegroundColor White
-        Write-Host " [3] Sauvegarde SECURITE (Users, Groups, GPO, Trusts)" -ForegroundColor White
-        Write-Host " [4] Sauvegarde INFRASTRUCTURE (Sites, DC, Replication)" -ForegroundColor White
+    if (Get-Command Write-ADLog -ErrorAction SilentlyContinue) {
+        Write-ADLog -Message $Message -Level $Level
     }
-    
-    Write-Host " [R] Retour au menu principal" -ForegroundColor Yellow
-    Write-Host ""
-    
-    $presetChoice = Read-Host "Choisissez un preset"
-    
-    switch ($presetChoice) {
-        "1" { Set-BackupPreset -BackupOptions $backupOptions -PresetName "essential" }
-        "2" { Set-BackupPreset -BackupOptions $backupOptions -PresetName "complete" }
-        "3" { Set-BackupPreset -BackupOptions $backupOptions -PresetName "security" }
-        "4" { Set-BackupPreset -BackupOptions $backupOptions -PresetName "infrastructure" }
-        default { return }
+    else {
+        $logEntry = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') [$Level] $Message"
+        Write-Host $logEntry -ForegroundColor $(
+            switch ($Level) {
+                "INFO" { "White" }
+                "WARNING" { "Yellow" }
+                "ERROR" { "Red" }
+            }
+        )
+        
+        if ($logFile) {
+            try {
+                Add-Content -Path $logFile -Value $logEntry -ErrorAction Stop
+            }
+            catch {
+                Write-Warning "Impossible d'ecrire dans le fichier de log: $($_.Exception.Message)"
+            }
+        }
     }
-    
-    Write-Host "Preset applique!" -ForegroundColor Green
-    Start-Sleep 2
 }
 
-# Fonction pour afficher les informations AD
-function Show-ADInfo {
-    Clear-Host
-    Write-Host "===============================================================" -ForegroundColor Cyan
-    Write-Host "              INFORMATIONS ACTIVE DIRECTORY" -ForegroundColor Cyan
-    Write-Host "===============================================================" -ForegroundColor Cyan
-    Write-Host ""
-    
-    try {
-        $domain = Get-ADDomain
-        $forest = Get-ADForest
-        $dcCount = (Get-ADDomainController -Filter *).Count
-        $userCount = (Get-ADUser -Filter *).Count
-        $groupCount = (Get-ADGroup -Filter *).Count
-        $computerCount = (Get-ADComputer -Filter *).Count
-        $ouCount = (Get-ADOrganizationalUnit -Filter *).Count
-        
-        Write-Host "Domaine: $($domain.DNSRoot)" -ForegroundColor White
-        Write-Host "Niveau fonctionnel: $($domain.DomainMode)" -ForegroundColor White
-        Write-Host "Foret: $($forest.Name)" -ForegroundColor White
-        Write-Host "Controleurs de domaine: $dcCount" -ForegroundColor Yellow
-        Write-Host ""
-        Write-Host "Statistiques des objets:" -ForegroundColor Cyan
-        Write-Host "  - Utilisateurs: $userCount" -ForegroundColor White
-        Write-Host "  - Groupes: $groupCount" -ForegroundColor White
-        Write-Host "  - Ordinateurs: $computerCount" -ForegroundColor White
-        Write-Host "  - Unites organisationnelles: $ouCount" -ForegroundColor White
-        
-        # Estimation de la taille de sauvegarde
-        $estimatedSize = [math]::Round(($userCount * 50 + $groupCount * 20 + $computerCount * 30 + $ouCount * 10) / 1024, 2)
-        Write-Host ""
-        Write-Host "Taille estimee de la sauvegarde: ~$estimatedSize MB" -ForegroundColor Green
-        
-    } catch {
-        Write-Host "Erreur lors de la recuperation des informations AD: $($_.Exception.Message)" -ForegroundColor Red
-    }
-    
-    Write-Host ""
-    Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor Yellow
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-}
+# ...existing backup functions...
 
-# Boucle principale simplifiee
-Write-ADLog "Debut de la sauvegarde interactive AD dans $backupFolder"
+# Boucle principale avec fallback pour l'UI
+Write-Log "Debut de la sauvegarde interactive AD dans $backupFolder"
 
 $allSelected = $false
 
 do {
-    $choice = Show-ColorMenu -Title "SAUVEGARDE INTERACTIVE ACTIVE DIRECTORY" -Options $backupOptions -SpecialOptions @(
-        "[A] TOUT selectionner/deselectionner",
-        "[P] Presets rapides", 
-        "[I] Informations sur l'AD",
-        "[S] Demarrer la sauvegarde",
-        "[Q] Quitter"
-    )
+    # Affichage du menu avec ou sans modules UI
+    if (Get-Command Show-ColorMenu -ErrorAction SilentlyContinue) {
+        $choice = Show-ColorMenu -Title "SAUVEGARDE INTERACTIVE ACTIVE DIRECTORY" -Options $backupOptions -SpecialOptions @(
+            "[A] TOUT selectionner/deselectionner",
+            "[P] Presets rapides", 
+            "[I] Informations sur l'AD",
+            "[S] Demarrer la sauvegarde",
+            "[Q] Quitter"
+        )
+    }
+    else {
+        # Interface simple sans module UI
+        Clear-Host
+        Write-Host "===============================================================" -ForegroundColor Yellow
+        Write-Host "        SAUVEGARDE INTERACTIVE ACTIVE DIRECTORY" -ForegroundColor Yellow
+        Write-Host "===============================================================" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "Selectionnez les elements a sauvegarder:" -ForegroundColor Cyan
+        Write-Host ""
+        
+        foreach ($key in ($backupOptions.Keys | Sort-Object { [int]$_ })) {
+            $option = $backupOptions[$key]
+            $indicator = if ($option.Selected) { "[X]" } else { "[ ]" }
+            $color = if ($option.Selected) { "Green" } else { "White" }
+            Write-Host " $indicator [$key] $($option.Name)" -ForegroundColor $color
+        }
+        
+        Write-Host ""
+        Write-Host " [A] TOUT selectionner/deselectionner" -ForegroundColor Green
+        Write-Host " [S] Demarrer la sauvegarde" -ForegroundColor Green
+        Write-Host " [Q] Quitter" -ForegroundColor Red
+        Write-Host ""
+        
+        $choice = Read-Host "Votre choix"
+    }
     
     switch ($choice.ToUpper()) {
         "A" {
-            # Basculer tout
             $allSelected = -not $allSelected
             foreach ($key in $backupOptions.Keys) {
                 $backupOptions[$key].Selected = $allSelected
@@ -170,16 +174,7 @@ do {
             Write-Host "Tous les elements ont ete $status!" -ForegroundColor Green
             Start-Sleep 1
         }
-        "P" {
-            # Menu des presets
-            Show-PresetMenu
-        }
-        "I" {
-            # Informations AD
-            Show-ADInfo
-        }
         "S" {
-            # Logique de sauvegarde
             $selectedCount = ($backupOptions.Values | Where-Object { $_.Selected }).Count
             if ($selectedCount -eq 0) {
                 Write-Host "Aucun element selectionne!" -ForegroundColor Red
@@ -194,11 +189,12 @@ do {
             foreach ($key in ($backupOptions.Keys | Sort-Object { [int]$_ })) {
                 if ($backupOptions[$key].Selected) {
                     try {
-                        Show-OperationProgress -Activity "Sauvegarde en cours" -Status $backupOptions[$key].Name -PercentComplete ((([int]$key) / $backupOptions.Count) * 100)
-                        & $backupOptions[$key].Function -OutputPath $backupFolder
-                    } catch {
+                        Write-Progress -Activity "Sauvegarde en cours" -Status $backupOptions[$key].Name -PercentComplete ((([int]$key) / $backupOptions.Count) * 100)
+                        & $backupOptions[$key].Function
+                    }
+                    catch {
                         $errorCount++
-                        Write-ADLog "Erreur: $($_.Exception.Message)" "ERROR"
+                        Write-Log "Erreur: $($_.Exception.Message)" "ERROR"
                     }
                 }
             }
@@ -208,28 +204,12 @@ do {
             $endTime = Get-Date
             $duration = $endTime - $startTime
             
-            # Creation du rapport de synthese
-            $summary = @{
-                Date = Get-Date
-                BackupFolder = $backupFolder
-                SelectedItems = ($backupOptions.Keys | Where-Object { $backupOptions[$_].Selected } | ForEach-Object { $backupOptions[$_].Name })
-                Duration = [math]::Round($duration.TotalMinutes, 2)
-                FilesCreated = (Get-ChildItem $backupFolder -File -ErrorAction SilentlyContinue).Count
-                TotalSize = [math]::Round(((Get-ChildItem $backupFolder -Recurse -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum / 1MB), 2)
-                ErrorCount = $errorCount
-                SuccessCount = $selectedCount - $errorCount
-            }
-            
-            $summary | ConvertTo-Json -Depth 3 | Out-File (Join-Path $backupFolder "BackupSummary.json") -Encoding UTF8
-            
-            Write-ADLog "Sauvegarde interactive terminee en $([math]::Round($duration.TotalMinutes, 1)) minutes ($($summary.SuccessCount) succes, $errorCount erreurs)"
+            Write-Log "Sauvegarde interactive terminee en $([math]::Round($duration.TotalMinutes, 1)) minutes ($($selectedCount - $errorCount) succes, $errorCount erreurs)"
             Write-Host ""
             Write-Host "========== SAUVEGARDE TERMINEE ==========" -ForegroundColor Green
             Write-Host "Dossier: $backupFolder" -ForegroundColor White
             Write-Host "Duree: $([math]::Round($duration.TotalMinutes, 1)) minutes" -ForegroundColor White
-            Write-Host "Fichiers crees: $($summary.FilesCreated)" -ForegroundColor White
-            Write-Host "Taille totale: $($summary.TotalSize) MB" -ForegroundColor White
-            Write-Host "Succes: $($summary.SuccessCount)/$selectedCount" -ForegroundColor $(if ($errorCount -eq 0) { "Green" } else { "Yellow" })
+            Write-Host "Succes: $($selectedCount - $errorCount)/$selectedCount" -ForegroundColor $(if ($errorCount -eq 0) { "Green" } else { "Yellow" })
             Write-Host "=========================================" -ForegroundColor Green
             Write-Host ""
             Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor Yellow
@@ -241,16 +221,44 @@ do {
             return
         }
         default {
-            # Gestion des selections numeriques
             if ($backupOptions.ContainsKey($choice)) {
                 $backupOptions[$choice].Selected = -not $backupOptions[$choice].Selected
                 $status = if ($backupOptions[$choice].Selected) { "selectionne" } else { "deselectionne" }
                 Write-Host "$($backupOptions[$choice].Name) $status" -ForegroundColor Green
                 Start-Sleep 1
-            } else {
+            }
+            else {
                 Write-Host "Choix invalide!" -ForegroundColor Red
                 Start-Sleep 1
             }
         }
     }
+} while ($true)
+Write-Host "Duree: $([math]::Round($duration.TotalMinutes, 1)) minutes" -ForegroundColor White
+Write-Host "Fichiers crees: $($summary.FilesCreated)" -ForegroundColor White
+Write-Host "Taille totale: $($summary.TotalSize) MB" -ForegroundColor White
+Write-Host "Succes: $($summary.SuccessCount)/$selectedCount" -ForegroundColor $(if ($errorCount -eq 0) { "Green" } else { "Yellow" })
+Write-Host "=========================================" -ForegroundColor Green
+Write-Host ""
+Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor Yellow
+$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+return
+}
+"Q" {
+    Write-Host "Annulation de la sauvegarde." -ForegroundColor Yellow
+    return
+}
+default {
+    # Gestion des selections numeriques
+    if ($backupOptions.ContainsKey($choice)) {
+        $backupOptions[$choice].Selected = -not $backupOptions[$choice].Selected
+        $status = if ($backupOptions[$choice].Selected) { "selectionne" } else { "deselectionne" }
+        Write-Host "$($backupOptions[$choice].Name) $status" -ForegroundColor Green
+        Start-Sleep 1
+    } else {
+        Write-Host "Choix invalide!" -ForegroundColor Red
+        Start-Sleep 1
+    }
+}
+}
 } while ($true)

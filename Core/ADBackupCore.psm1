@@ -63,7 +63,8 @@ function Write-ADLog {
     if ($Script:LogFile) {
         try {
             Add-Content -Path $Script:LogFile -Value $logEntry -ErrorAction Stop
-        } catch {
+        }
+        catch {
             Write-Warning "Impossible d'ecrire dans le fichier de log: $($_.Exception.Message)"
         }
     }
